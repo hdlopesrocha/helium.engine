@@ -10,6 +10,7 @@ uniform float materialAlpha;
 uniform float ftime;
 uniform vec3 materialSpecular;
 uniform int opaque;
+uniform int lightEnabled;
 
 in vec3 vPosition;
 in vec3 vNormal;
@@ -27,15 +28,17 @@ void main(void) {
 	if(opaque==0 && outColor.w==1.0)
 			discard;
 
-	vec3 lightDir = -normalize(vPosition-lightPosition[0]);
-	vec3 normal = normalize(vNormal);
+    if(lightEnabled == 1){
+    	vec3 lightDir = -normalize(vPosition-lightPosition[0]);
+    	vec3 normal = normalize(vNormal);
+        float specularLightBrightness = pow(max(0.0, dot(normalize(reflect(lightDir, normal)), normalize(vPosition-cameraPosition))), materialShininess);
+        vec3 specularLightWeighting = lightSpecularColor[0] * specularLightBrightness;
+        specularLightWeighting *= materialSpecular;
+	    outColor.xyz *=  diffuseColor*max(dot(normal, lightDir), 0.0);
+	    outColor.xyz+=specularLightWeighting;
+    }
 
-	float specularLightBrightness = pow(max(0.0, dot(normalize(reflect(lightDir, normal)), normalize(vPosition-cameraPosition))), materialShininess);
-    vec3 specularLightWeighting = lightSpecularColor[0] * specularLightBrightness;
-  	specularLightWeighting *= materialSpecular;
-
-	outColor.xyz *=  diffuseColor*max(dot(normal, lightDir), 0.0);
-	outColor.xyz+=ambientColor+specularLightWeighting;
+    outColor.xyz+=ambientColor;
 
 	//gl_FragColor.xyz = lightSpecularColor[0];
 	//gl_FragColor.xyz = (normal+vec3(1.0,1.0,1.0))/2.0;

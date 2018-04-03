@@ -2,18 +2,22 @@ package com.enter4ward.lwjgl;
 
 
 import com.enter4ward.math.BoundingSphere;
+import com.enter4ward.math.VertexData;
 import org.joml.Matrix4f;
+import org.joml.Quaternionf;
+import org.joml.Vector2f;
 import org.joml.Vector3f;
 
 import static org.lwjgl.opengl.GL11.*;
 
 public class DrawableSphere {
 
-    BufferObject obj = new BufferObject(false);
+    VertexData data = new VertexData();
+    BufferObject buffer = new BufferObject(false);
+    boolean lines;
 
-
-    public DrawableSphere() {
-
+    public DrawableSphere(boolean lines, boolean invertNormals) {
+        this.lines = lines;
         float[] packedVector = {0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.866f, -0.5f, 0.0f, 0.8474f, -0.5309f, 0.0f, 0.8333f, -0.25f, 0.866f, -0.433f, -0.2654f, 0.8474f, -0.4598f, 0.0833f, 0.8333f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0833f, 1.0f, -0.433f, 0.866f, -0.25f, -0.4598f, 0.8474f, -0.2654f, 0.1667f, 0.8333f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.1667f, 1.0f, -0.5f, 0.866f, 0.0f, -0.5309f, 0.8474f, 0.0f, 0.25f, 0.8333f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.25f, 1.0f, -0.433f, 0.866f, 0.25f, -0.4598f, 0.8474f, 0.2654f, 0.3333f, 0.8333f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.3333f, 1.0f, -0.25f, 0.866f, 0.433f, -0.2655f, 0.8474f, 0.4598f, 0.4167f, 0.8333f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.4167f, 1.0f, 0.0f, 0.866f, 0.5f, 0.0f, 0.8474f, 0.5309f, 0.5f, 0.8333f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.5f, 1.0f, 0.25f, 0.866f, 0.433f, 0.2654f, 0.8474f, 0.4598f, 0.5833f, 0.8333f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.5833f, 1.0f, 0.433f, 0.866f, 0.25f, 0.4598f, 0.8474f, 0.2655f, 0.6667f, 0.8333f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.6667f, 1.0f, 0.5f, 0.866f, 0.0f, 0.5309f, 0.8474f, 0.0f, 0.75f, 0.8333f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.75f, 1.0f, 0.433f, 0.866f, -0.25f, 0.4598f, 0.8474f, -0.2654f, 0.8333f, 0.8333f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.8333f, 1.0f, 0.25f, 0.866f, -0.433f, 0.2655f, 0.8474f, -0.4598f, 0.9167f, 0.8333f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.9167f, 1.0f, 0.0f, 0.866f, -0.5f, 0.0f, 0.8474f, -0.5309f, 1.0f, 0.8333f, 0.0f, 0.5f, -0.866f, 0.0f, 0.4823f, -0.876f, 0.0f, 0.6667f, -0.433f, 0.5f, -0.75f, -0.438f, 0.4823f, -0.7586f, 0.0833f, 0.6667f, -0.75f, 0.5f, -0.433f, -0.7586f, 0.4823f, -0.438f, 0.1667f, 0.6667f, -0.866f, 0.5f, 0.0f, -0.876f, 0.4823f, 0.0f, 0.25f, 0.6667f, -0.75f, 0.5f, 0.433f, -0.7586f, 0.4823f, 0.438f, 0.3333f, 0.6667f, -0.433f, 0.5f, 0.75f, -0.438f, 0.4823f, 0.7586f, 0.4167f, 0.6667f, 0.0f, 0.5f, 0.866f, 0.0f, 0.4823f, 0.876f, 0.5f, 0.6667f, 0.433f, 0.5f, 0.75f, 0.438f, 0.4823f, 0.7586f, 0.5833f, 0.6667f, 0.75f, 0.5f, 0.433f, 0.7586f, 0.4823f, 0.438f, 0.6667f, 0.6667f, 0.866f, 0.5f, 0.0f, 0.876f, 0.4823f, 0.0f, 0.75f, 0.6667f, 0.75f, 0.5f, -0.433f, 0.7586f, 0.4823f, -0.438f, 0.8333f, 0.6667f, 0.433f, 0.5f, -0.75f, 0.438f, 0.4823f, -0.7586f, 0.9167f, 0.6667f, 0.0f, 0.5f, -0.866f, 0.0f, 0.4823f, -0.876f, 1.0f, 0.6667f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.5f, -0.5f, 0.0f, -0.866f, -0.5f, 0.0f, -0.866f, 0.0833f, 0.5f, -0.866f, 0.0f, -0.5f, -0.866f, 0.0f, -0.5f, 0.1667f, 0.5f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, 0.25f, 0.5f, -0.866f, 0.0f, 0.5f, -0.866f, 0.0f, 0.5f, 0.3333f, 0.5f, -0.5f, 0.0f, 0.866f, -0.5f, 0.0f, 0.866f, 0.4167f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.5f, 0.5f, 0.5f, 0.0f, 0.866f, 0.5f, 0.0f, 0.866f, 0.5833f, 0.5f, 0.866f, 0.0f, 0.5f, 0.866f, 0.0f, 0.5f, 0.6667f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.75f, 0.5f, 0.866f, 0.0f, -0.5f, 0.866f, 0.0f, -0.5f, 0.8333f, 0.5f, 0.5f, 0.0f, -0.866f, 0.5f, 0.0f, -0.866f, 0.9167f, 0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 1.0f, 0.5f, 0.0f, -0.5f, -0.866f, 0.0f, -0.4823f, -0.876f, 0.0f, 0.3333f, -0.433f, -0.5f, -0.75f, -0.438f, -0.4823f, -0.7586f, 0.0833f, 0.3333f, -0.75f, -0.5f, -0.433f, -0.7586f, -0.4823f, -0.438f, 0.1667f, 0.3333f, -0.866f, -0.5f, 0.0f, -0.876f, -0.4823f, 0.0f, 0.25f, 0.3333f, -0.75f, -0.5f, 0.433f, -0.7586f, -0.4823f, 0.438f, 0.3333f, 0.3333f, -0.433f, -0.5f, 0.75f, -0.438f, -0.4823f, 0.7586f, 0.4167f, 0.3333f, 0.0f, -0.5f, 0.866f, 0.0f, -0.4823f, 0.876f, 0.5f, 0.3333f, 0.433f, -0.5f, 0.75f, 0.438f, -0.4823f, 0.7586f, 0.5833f, 0.3333f, 0.75f, -0.5f, 0.433f, 0.7586f, -0.4823f, 0.438f, 0.6667f, 0.3333f, 0.866f, -0.5f, 0.0f, 0.876f, -0.4823f, 0.0f, 0.75f, 0.3333f, 0.75f, -0.5f, -0.433f, 0.7586f, -0.4823f, -0.438f, 0.8333f, 0.3333f, 0.433f, -0.5f, -0.75f, 0.438f, -0.4823f, -0.7586f, 0.9167f, 0.3333f, 0.0f, -0.5f, -0.866f, 0.0f, -0.4823f, -0.876f, 1.0f, 0.3333f, 0.0f, -0.866f, -0.5f, 0.0f, -0.8474f, -0.5309f, 0.0f, 0.1667f, -0.25f, -0.866f, -0.433f, -0.2654f, -0.8474f, -0.4598f, 0.0833f, 0.1667f, -0.433f, -0.866f, -0.25f, -0.4598f, -0.8474f, -0.2654f, 0.1667f, 0.1667f, -0.5f, -0.866f, 0.0f, -0.5309f, -0.8474f, 0.0f, 0.25f, 0.1667f, -0.433f, -0.866f, 0.25f, -0.4598f, -0.8474f, 0.2654f, 0.3333f, 0.1667f, -0.25f, -0.866f, 0.433f, -0.2655f, -0.8474f, 0.4598f, 0.4167f, 0.1667f, 0.0f, -0.866f, 0.5f, 0.0f, -0.8474f, 0.5309f, 0.5f, 0.1667f, 0.25f, -0.866f, 0.433f, 0.2654f, -0.8474f, 0.4598f, 0.5833f, 0.1667f, 0.433f, -0.866f, 0.25f, 0.4598f, -0.8474f, 0.2655f, 0.6667f, 0.1667f, 0.5f, -0.866f, 0.0f, 0.5309f, -0.8474f, 0.0f, 0.75f, 0.1667f, 0.433f, -0.866f, -0.25f, 0.4598f, -0.8474f, -0.2654f, 0.8333f, 0.1667f, 0.25f, -0.866f, -0.433f, 0.2655f, -0.8474f, -0.4598f, 0.9167f, 0.1667f, 0.0f, -0.866f, -0.5f, 0.0f, -0.8474f, -0.5309f, 1.0f, 0.1667f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0833f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.1667f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.25f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.3333f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.4167f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.5833f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.6667f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.75f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.8333f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.9167f, 0.0f};
 
         short[] ii = {
@@ -24,39 +28,47 @@ public class DrawableSphere {
 
             Vector3f v3 = new Vector3f(packedVector[i + 0], packedVector[i + 1], packedVector[i + 2]).normalize();
 
-            obj.addVertex(v3.x, v3.y, v3.z);
-
-            obj.addNormal(packedVector[i + 3], packedVector[i + 4],
-                    packedVector[i + 5]);
-            obj.addTexture(packedVector[i + 6], packedVector[i + 7]);
+            data.addPosition(v3);
+            data.addNormal(new Vector3f(packedVector[i + 3], packedVector[i + 4], packedVector[i + 5]).mul(invertNormals ? -1 : 1));
+            data.addTexture(new Vector2f(packedVector[i + 6], packedVector[i + 7]));
 
         }
 
         for (int i = 0; i < ii.length; ++i) {
-            obj.addIndex(ii[i]);
+            data.addIndex(ii[i]);
         }
 
-        obj.buildBuffer();
+        buffer.buildBuffer(data);
     }
 
     /**
      * Draw.
      *
-     * @param shader the shader
+     * @param shader   the shader
+     * @param rotation
      */
-    public final void draw(final ShaderProgram shader, BoundingSphere sph) {
+    public final void draw(final ShaderProgram shader, BoundingSphere sph, Quaternionf rotation) {
         //System.out.println(min.toString()+" : "+max.toString());
-        shader.setAmbientColor(1, 1, 1);
-        shader.setMaterialAlpha(0.2f);
-        glDisable(GL_CULL_FACE);
-        shader.setModelMatrix(new Matrix4f().translate(sph).scale(sph.r));
-        //GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
-        obj.draw(shader);
-        //GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
 
 
-        glEnable(GL_CULL_FACE);
-
+        if (lines) {
+            shader.setAmbientColor(1, 1, 1);
+            shader.setMaterialAlpha(0.5f);
+            shader.setOpaque(false);
+            glDisable(GL_CULL_FACE);
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        }
+        Matrix4f modelMatrix = new Matrix4f().translate(sph).scale(sph.r);
+        if (rotation != null) {
+            modelMatrix.rotate(rotation);
+        }
+        shader.setModelMatrix(modelMatrix);
+        buffer.draw(shader);
+        if (lines) {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            glEnable(GL_CULL_FACE);
+        }
+        shader.reset();
 
     }
 

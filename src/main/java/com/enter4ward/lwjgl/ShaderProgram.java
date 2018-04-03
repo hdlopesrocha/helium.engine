@@ -11,6 +11,7 @@ import java.io.InputStream;
 import java.util.Scanner;
 
 import static org.lwjgl.opengl.ARBShaderObjects.*;
+import static org.lwjgl.opengl.GL11.*;
 
 // TODO: Auto-generated Javadoc
 
@@ -74,6 +75,7 @@ public class ShaderProgram {
      * The opaque location.
      */
     private int opaqueLocation = 0;
+    private int lightEnabledLocation = 0;
 
     /**
      * The ambient color location.
@@ -166,6 +168,7 @@ public class ShaderProgram {
         cameraPositionLocation = glGetUniformLocationARB(program,
                 "cameraPosition");
         opaqueLocation = glGetUniformLocationARB(program, "opaque");
+        lightEnabledLocation = glGetUniformLocationARB(program, "lightEnabled");
 
         // material locations
         materialShininessLocation = glGetUniformLocationARB(program,
@@ -188,7 +191,7 @@ public class ShaderProgram {
     /**
      * Gets the log info.
      *
-     * @param obj the obj
+     * @param obj the buffer
      * @return the log info
      */
     private static String getLogInfo(int obj) {
@@ -327,11 +330,15 @@ public class ShaderProgram {
      */
     public void setOpaque(Boolean value) {
         if (value)
-            GL11.glEnable(GL11.GL_CULL_FACE);
+            glEnable(GL_CULL_FACE);
         else
-            GL11.glDisable(GL11.GL_CULL_FACE);
+            glDisable(GL_CULL_FACE);
 
         glUniform1iARB(opaqueLocation, value ? 1 : 0);
+    }
+
+    public void setLightEnabled(Boolean value) {
+        glUniform1iARB(lightEnabledLocation, value ? 1 : 0);
     }
 
     /**
@@ -421,12 +428,15 @@ public class ShaderProgram {
         glUniformMatrix4fvARB(modelMatrixLocation, false, matrix.get(new float[16]));
     }
 
-
     public void reset() {
         setModelMatrix(new Matrix4f().identity());
+        glEnable(GL_CULL_FACE);
+        glEnable(GL_DEPTH_TEST);
+        setLightEnabled(true);
         setDiffuseColor(1, 1, 1);
         setMaterialAlpha(1f);
         setAmbientColor(0, 0, 0);
+        setOpaque(true);
     }
 
 }

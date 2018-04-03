@@ -1,9 +1,11 @@
 package com.enter4ward.math;
 
+import com.enter4ward.lwjgl.DrawableSphere;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import org.joml.Quaternionf;
+import org.joml.Vector2f;
 import org.joml.Vector3f;
 
 import java.io.InputStream;
@@ -21,16 +23,18 @@ public class Model3D implements IModel3D {
     protected List<Group> groups = new ArrayList<Group>();
 
     protected TreeMap<String, Material> materials = new TreeMap<String, Material>();
+    private DrawableSphere sphere;
 
     private BoundingSphere container;
     private List<Vector3f> lights = new ArrayList<Vector3f>();
 
     public Model3D() {
-
+        sphere = new DrawableSphere(true, false);
     }
 
     public Model3D(String filename, float scale, IBufferBuilder builder,
                    final Quaternionf rot) {
+        this();
         ClassLoader classLoader = getClass().getClassLoader();
         InputStream stream = classLoader.getResourceAsStream(filename);
 
@@ -156,6 +160,8 @@ public class Model3D implements IModel3D {
                         while (jsonParser.nextToken() != JsonToken.END_ARRAY) {
                             // jsonParser.nextToken(); // {
                             IBufferObject currentSubGroup = builder.build();
+                            VertexData vertexData = new VertexData();
+
                             currentGroup.addBuffer(currentSubGroup);
                             // System.out.println("JSON INIT");
                             while (jsonParser.nextToken() != JsonToken.END_OBJECT) {
@@ -185,8 +191,7 @@ public class Model3D implements IModel3D {
                                         }
                                         points.add(vec);
                                         groupPoints.add(vec);
-                                        currentSubGroup.addVertex(vec.x,
-                                                vec.y, vec.z);
+                                        vertexData.addPosition(vec);
                                     }
                                 } else if ("vn".equals(key)) {
 
@@ -200,8 +205,7 @@ public class Model3D implements IModel3D {
                                         if (rot != null) {
                                             Util.transform(vec, rot);
                                         }
-                                        currentSubGroup.addNormal(vec.x,
-                                                vec.y, vec.z);
+                                        vertexData.addNormal(vec);
                                     }
                                 } else if ("vt".equals(key)) {
 
@@ -210,18 +214,18 @@ public class Model3D implements IModel3D {
                                         jsonParser.nextToken();
                                         float y = 1f - jsonParser
                                                 .getFloatValue();
-                                        currentSubGroup.addTexture(x, y);
+                                        vertexData.addTexture(new Vector2f(x, y));
                                     }
                                 } else if ("ii".equals(key)) {
 
                                     while (jsonParser.nextToken() != JsonToken.END_ARRAY) {
                                         short val = jsonParser.getShortValue();
-                                        currentSubGroup.addIndex(val);
+                                        vertexData.addIndex(val);
                                     }
                                 }
                             }
                             // System.out.println("JSON END");
-                            currentSubGroup.buildBuffer();
+                            currentSubGroup.buildBuffer(vertexData);
                             // System.out.println("JSON BUILD BUFFER");
                         }
                         currentGroup.createFromPoints(groupPoints);
@@ -235,6 +239,10 @@ public class Model3D implements IModel3D {
             e.printStackTrace();
         }
 
+    }
+
+    public DrawableSphere getSphere() {
+        return sphere;
     }
 
     public Iterable<Group> getGroups() {

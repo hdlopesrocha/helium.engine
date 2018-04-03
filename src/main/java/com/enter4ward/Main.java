@@ -1,10 +1,8 @@
 package com.enter4ward;
 
 import com.enter4ward.lwjgl.*;
-import com.enter4ward.math.BoundingSphere;
-import com.enter4ward.math.Camera;
-import com.enter4ward.math.IBufferBuilder;
-import com.enter4ward.math.Space;
+import com.enter4ward.math.*;
+import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 
@@ -33,34 +31,39 @@ public class Main extends Game {
     DrawableSphere sphere;
     LWJGLModel3D boxModel;
     Object3D box;
-    Object hit;
+    List<Object> hits = new ArrayList<>();
     List<Object> tests = new ArrayList<>();
     boolean hyperCubeMode = false;
-    boolean boundingSpeheres = false;
+    boolean boundingSpheres = false;
+    boolean boundingBoxes = true;
+    boolean rotationEnabled = true;
     int visibleObjects = 0;
     Camera camera;
     float time = 0;
-
-
+    float cameraMovementVelocity = 0.2f;
+    float cameraRotationVelocity = 0.01f;
+    Quaternionf objRotation = new Quaternionf().fromAxisAngleRad(3f, 7f, 11f, (float) Math.PI / 77f);
     /**
      * The space.
      */
     private Space space;
     private DrawableBox cubeModel;
-    private Vector3f cameraPos;
+    private LWJGLModel3D skyModel;
+    private Object3D sky;
 
-    public Main(int w, int h) {
-        super(w, h);
+
+    public Main() {
+
     }
 
     public static void main(String[] args) {
-        new Main(1280, 720);
+        new Main().start(1280, 720);
     }
 
     @Override
     public void setup() {
-        camera = new Camera(1280, 720, 0.1f, 256);
-        cameraPos = new Vector3f(48, 24, 48);
+        camera = new Camera(getWidth(), getHeight(), 0.1f, 256);
+
         space = new Space(16);
         cubeModel = new DrawableBox();
 
@@ -70,40 +73,70 @@ public class Main extends Game {
             e.printStackTrace();
         }
 
-        sphere = new DrawableSphere();
+        sphere = new DrawableSphere(true, false);
+        try {
+            skyModel = new LWJGLModel3D("sphere.json", 10f, bufferBuilder);
+            sky = new Object3D(new Vector3f(1, 1, 1), skyModel);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
         box = new Object3D(new Vector3f(0, 0, 0), boxModel);
         box.setNode(space.insert(box.getBoundingSphere(), box));
 
         new Object3D(new Vector3f(0, 0, 0), boxModel) {{
-            space.insert(getBoundingSphere(), this);
+            setNode(space.insert(getBoundingSphere(), this));
         }};
         new Object3D(new Vector3f(DISTANCE, 0, 0), boxModel) {{
-            space.insert(getBoundingSphere(), this);
+            setNode(space.insert(getBoundingSphere(), this));
         }};
         new Object3D(new Vector3f(-DISTANCE, 0, 0), boxModel) {{
-            space.insert(getBoundingSphere(), this);
+            setNode(space.insert(getBoundingSphere(), this));
         }};
         new Object3D(new Vector3f(0, 0, DISTANCE), boxModel) {{
-            space.insert(getBoundingSphere(), this);
+            setNode(space.insert(getBoundingSphere(), this));
         }};
         new Object3D(new Vector3f(0, 0, -DISTANCE), boxModel) {{
-            space.insert(getBoundingSphere(), this);
+            setNode(space.insert(getBoundingSphere(), this));
         }};
 
         for (int i = 0; i < NUMBER_OF_OBJECTS; ++i) {
-            new Object3D(new Vector3f((RANDOM.nextFloat() - 0.5f) * MAP_SIZE, (RANDOM.nextFloat() - 0.5f) * MAP_SIZE, (RANDOM.nextFloat() - 0.5f) * MAP_SIZE), boxModel) {{
-                space.insert(getBoundingSphere(), this);
-            }};
+            insertRandomBox();
         }
 
-
-        camera.lookAt(cameraPos, new Vector3f(0, 0, 0), new Vector3f(0, 1, 0));
-        getProgram().setLightPosition(0, new Vector3f(3, 3, 3));
+        camera.lookAt(
+                new Vector3f(48, 24, 48),
+                new Vector3f(0, 0, 0),
+                new Vector3f(0, 1, 0)
+        );
         getProgram().setAmbientColor(0, 0, 0);
         getProgram().setDiffuseColor(1, 1, 1);
         getProgram().setMaterialShininess(1000);
         getProgram().setLightColor(0, new Vector3f(1, 1, 1));
-        getProgram().setLightPosition(0, new Vector3f(128, 128, 128));
+        getProgram().setLightPosition(0, new Vector3f(-5, 2, 10));
+    }
+
+    public void insertRandomBox() {
+        new Object3D(new Vector3f(
+                (RANDOM.nextFloat() - 0.5f) * MAP_SIZE,
+                (RANDOM.nextFloat() - 0.5f) * MAP_SIZE,
+                (RANDOM.nextFloat() - 0.5f) * MAP_SIZE), boxModel) {{
+            setNode(space.insert(getBoundingSphere(), this));
+        }};
+    }
+
+    public void insertRandomBoxInsideSphere(BoundingSphere sphere) {
+        float r = RANDOM.nextFloat() * sphere.r;
+        float t = (float) (RANDOM.nextFloat() * Math.PI);
+        float s = (float) (2 * RANDOM.nextFloat() * Math.PI);
+
+
+        new Object3D(new Vector3f(
+                sphere.x + (float) (r * Math.sin(t) * Math.cos(s)),
+                sphere.y + (float) (r * Math.sin(t) * Math.sin(s)),
+                sphere.z + (float) (r * Math.cos(t))
+        ), boxModel) {{
+            setNode(space.insert(getBoundingSphere(), this));
+        }};
     }
 
     @Override
@@ -115,134 +148,200 @@ public class Main extends Game {
         box.setPosition(boxPos);
         box.setNode(space.update(box.getBoundingSphere(), box.getNode(), box));
         tests = new ArrayList<>();
-        hit = null;
+        hits.clear();
         tests.clear();
         BoundingSphere boxSphere = box.getBoundingSphere();
         space.handleObjectCollisions(boxSphere, obj -> {
             Object3D o3d = (Object3D) obj;
 
             if (box != o3d && boxSphere.intersects(o3d.getBoundingSphere())) {
-                hit = o3d;
+                hits.add(o3d);
             } else {
                 tests.add(o3d);
             }
         });
 
-        // moving.insert(space);
-        float tSense = 0.2f;
-        float rSense = 0.01f;
 
-        if (isKeyDown(GLFW.GLFW_KEY_LEFT)) {
-            camera.rotate(0, 1, 0, -rSense);
+        if (getKeyboardManager().isKeyDown(GLFW.GLFW_KEY_LEFT)) {
+            camera.rotate(0, 1, 0, -cameraRotationVelocity);
         }
-        if (isKeyDown(GLFW.GLFW_KEY_RIGHT)) {
-            camera.rotate(0, 1, 0, rSense);
+        if (getKeyboardManager().isKeyDown(GLFW.GLFW_KEY_RIGHT)) {
+            camera.rotate(0, 1, 0, cameraRotationVelocity);
         }
-        if (isKeyDown(GLFW.GLFW_KEY_UP)) {
-            camera.rotate(1, 0, 0, -rSense);
+        if (getKeyboardManager().isKeyDown(GLFW.GLFW_KEY_UP)) {
+            camera.rotate(1, 0, 0, -cameraRotationVelocity);
         }
-        if (isKeyDown(GLFW.GLFW_KEY_DOWN)) {
-            camera.rotate(1, 0, 0, rSense);
+        if (getKeyboardManager().isKeyDown(GLFW.GLFW_KEY_DOWN)) {
+            camera.rotate(1, 0, 0, cameraRotationVelocity);
         }
 
 
-        if (isKeyDown(GLFW.GLFW_KEY_Q)) {
-            camera.rotate(0, 0, 1, -rSense);
+        if (getKeyboardManager().isKeyDown(GLFW.GLFW_KEY_Q)) {
+            camera.rotate(0, 0, 1, -cameraRotationVelocity);
         }
 
-        if (isKeyDown(GLFW.GLFW_KEY_E)) {
-            camera.rotate(0, 0, 1, rSense);
+        if (getKeyboardManager().isKeyDown(GLFW.GLFW_KEY_E)) {
+            camera.rotate(0, 0, 1, cameraRotationVelocity);
         }
 
-        if (isKeyDown(GLFW.GLFW_KEY_W)) {
-            camera.move(tSense, 0, 0);
+        if (getKeyboardManager().isKeyDown(GLFW.GLFW_KEY_W)) {
+            camera.move(cameraMovementVelocity, 0, 0);
         }
 
-        if (isKeyDown(GLFW.GLFW_KEY_S)) {
-            camera.move(-tSense, 0, 0);
+        if (getKeyboardManager().isKeyDown(GLFW.GLFW_KEY_S)) {
+            camera.move(-cameraMovementVelocity, 0, 0);
         }
 
-        if (isKeyDown(GLFW.GLFW_KEY_A)) {
-            camera.move(0, 0, tSense);
+        if (getKeyboardManager().isKeyDown(GLFW.GLFW_KEY_A)) {
+            camera.move(0, 0, cameraMovementVelocity);
         }
 
-        if (isKeyDown(GLFW.GLFW_KEY_D)) {
-            camera.move(0, 0, -tSense);
+        if (getKeyboardManager().isKeyDown(GLFW.GLFW_KEY_D)) {
+            camera.move(0, 0, -cameraMovementVelocity);
         }
 
-        if (isKeyDown(GLFW.GLFW_KEY_H)) {
+
+        if (getKeyboardManager().hasKeyReleased(GLFW.GLFW_KEY_1)) {
+            this.boundingSpheres = !this.boundingSpheres;
+        }
+
+        if (getKeyboardManager().hasKeyReleased(GLFW.GLFW_KEY_2)) {
+            this.boundingBoxes = !this.boundingBoxes;
+        }
+
+        if (getKeyboardManager().hasKeyReleased(GLFW.GLFW_KEY_3)) {
             this.hyperCubeMode = !this.hyperCubeMode;
         }
 
-        if (isKeyDown(GLFW.GLFW_KEY_B)) {
-            this.boundingSpeheres = !this.boundingSpeheres;
+        if (getKeyboardManager().hasKeyReleased(GLFW.GLFW_KEY_4)) {
+            this.rotationEnabled = !this.rotationEnabled;
         }
+
+        if (getKeyboardManager().isKeyDown(GLFW.GLFW_KEY_5)) {
+            this.cameraMovementVelocity -= 0.01f;
+        }
+
+        if (getKeyboardManager().isKeyDown(GLFW.GLFW_KEY_6)) {
+            this.cameraMovementVelocity += 0.01f;
+        }
+
+        if (getKeyboardManager().isKeyDown(GLFW.GLFW_KEY_7)) {
+            this.cameraRotationVelocity -= 0.0005f;
+        }
+
+        if (getKeyboardManager().isKeyDown(GLFW.GLFW_KEY_8)) {
+            this.cameraRotationVelocity += 0.0005f;
+        }
+
+        if (getKeyboardManager().isKeyDown(GLFW.GLFW_KEY_R)) {
+            for (int i = 0; i < 256; ++i) {
+                insertRandomBox();
+            }
+        }
+
+        if (getKeyboardManager().isKeyDown(GLFW.GLFW_KEY_T)) {
+            for (int i = 0; i < 16; ++i) {
+                insertRandomBoxInsideSphere(new BoundingSphere(camera.getPosition(), 64));
+            }
+        }
+
+
+        if (getKeyboardManager().isKeyDown(GLFW.GLFW_KEY_Y)) {
+            for (int i = 0; i < 8; ++i) {
+                insertRandomBoxInsideSphere(new BoundingSphere(camera.getPosition(), 4));
+            }
+        }
+
+        if (getKeyboardManager().isKeyDown(GLFW.GLFW_KEY_U)) {
+            space.clear();
+            box.setNode(space.insert(box.getBoundingSphere(), box));
+        }
+
+
+        sky.getPosition().set(camera.getPosition());
+    }
+
+    @Override
+    protected void onWindowResized() {
+        camera.calculateProjection(getWidth(),getHeight());
     }
 
     @Override
     public void draw() {
         getProgram().update(camera);
-
-        getProgram().setLightPosition(0, box.getPosition());
         getProgram().use();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         visibleObjects = 0;
         useDefaultShader();
+
+        // DRAW SKY
+
+        getProgram().reset();
+        getProgram().setLightEnabled(false);
+        glDisable(GL_CULL_FACE);
+        glDisable(GL_DEPTH_TEST);
+        sky.draw(getProgram(), camera);
+
+        // DRAW OBJECTS
         space.handleVisibleObjects(camera, obj -> {
             getProgram().reset();
-            getProgram().setMaterialAlpha(1f);
-            getProgram().setOpaque(true);
 
-            if (obj instanceof Space.Node) {
+            if (obj instanceof Space.Node && boundingBoxes) {
                 Space.Node node = (Space.Node) obj;
                 if (node.containerSize() > 0 && node.contains(box)) {
                     getProgram().setAmbientColor(0f, 1f, 0f);
-                } else {
-                    return;
-                }
+                    getProgram().setMaterialAlpha(1f);
+                    getProgram().setOpaque(true);
 
-                Vector3f min = new Vector3f(node.getMinX(), node.getMinY(), node.getMinZ());
-                Vector3f max = new Vector3f(node.getMaxX(), node.getMaxY(), node.getMaxZ());
-                cubeModel.draw(getProgram(), min, max);
+                    Vector3f min = new Vector3f(node.getMinX(), node.getMinY(), node.getMinZ());
+                    Vector3f max = new Vector3f(node.getMaxX(), node.getMaxY(), node.getMaxZ());
+                    glBindTexture(GL_TEXTURE_2D, 0);
+                    getProgram().setLightEnabled(false);
+                    cubeModel.draw(getProgram(), min, max);
+                }
             } else if (obj instanceof Object3D) {
 
                 Object3D obj3d = (Object3D) obj;
-                if (obj3d == hit) {
-                    getProgram().setAmbientColor(1f, 0f, 0f);
-                } else if (obj3d == box) {
-                    getProgram().setAmbientColor(0f, 0f, 1f);
-                } else if (tests.contains(obj3d)) {
-                    getProgram().setAmbientColor(1f, 1f, 0f);
-                }
-                ++visibleObjects;
-                obj3d.draw(getProgram(), camera);
-                if (boundingSpeheres) {
-                    getProgram().setOpaque(false);
-                    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-                    sphere.draw(getProgram(), obj3d.getBoundingSphere());
-                    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+                if (camera.contains(obj3d.getBoundingSphere()) != ContainmentType.Disjoint) {
+                    if (hits.contains(obj3d)) {
+                        getProgram().setAmbientColor(1f, 0f, 0f);
+                    } else if (obj3d == box) {
+                        getProgram().setAmbientColor(0f, 0f, 1f);
+                    } else if (tests.contains(obj3d)) {
+                        getProgram().setAmbientColor(1f, 1f, 0f);
+                    } else {
+                    }
+                    if (rotationEnabled) {
+                        obj3d.getRotation().mul(objRotation).normalize();
+                    }
+                    ++visibleObjects;
+                    obj3d.draw(getProgram(), camera);
+                    if (boundingSpheres) {
+                        getProgram().setLightEnabled(false);
+                        obj3d.drawBoundingSpheres(getProgram(), camera);
+                    }
                 }
             }
         });
 
         space.handleVisibleObjects(camera, obj -> {
             getProgram().reset();
-            getProgram().setMaterialAlpha(.2f);
-            getProgram().setOpaque(false);
 
-            if (obj instanceof Space.Node) {
+            if (obj instanceof Space.Node && boundingBoxes) {
+                getProgram().setMaterialAlpha(.2f);
+                getProgram().setOpaque(false);
+
                 Space.Node node = (Space.Node) obj;
-                if (node.containerSize() == 0) {
-                    getProgram().setAmbientColor(1f, 1f, 1f);
-                } else {
-                    return;
-                }
+                getProgram().setAmbientColor(1f, 1f, 1f);
+                getProgram().setLightEnabled(false);
+
 
                 if (hyperCubeMode) {
+                    float hyperFactor = 2;
                     Vector3f min = new Vector3f(node.getMinX(), node.getMinY(), node.getMinZ());
-                    float shiftX = (float) (Math.sin(node.getMaxX()) * Math.sin(time + node.getMaxX()));
-                    float shiftY = (float) (Math.cos(node.getMaxY()) * Math.sin(time + node.getMaxY()));
-                    float shiftZ = (float) (Math.cos(node.getMaxZ()) * Math.cos(time + node.getMaxZ()));
+                    float shiftX = hyperFactor * (float) (Math.sin(node.getMaxX()) * Math.sin(time + node.getMaxX()));
+                    float shiftY = hyperFactor * (float) (Math.cos(node.getMaxY()) * Math.sin(time + node.getMaxY()));
+                    float shiftZ = hyperFactor * (float) (Math.cos(node.getMaxZ()) * Math.cos(time + node.getMaxZ()));
 
                     Vector3f max = new Vector3f(
                             node.getMaxX() + shiftX,
@@ -252,20 +351,12 @@ public class Main extends Game {
                 } else {
                     Vector3f min = new Vector3f(node.getMinX(), node.getMinY(), node.getMinZ());
                     Vector3f max = new Vector3f(node.getMaxX(), node.getMaxY(), node.getMaxZ());
+                    glBindTexture(GL_TEXTURE_2D, 0);
                     cubeModel.draw(getProgram(), min, max);
                 }
             }
         });
-
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        sphere.draw(getProgram(), new BoundingSphere(box.getPosition(), 1));
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        //   getFont().drawString(0,0, "Visible objects: "+visibleObjects, Color.white);
-        getProgram().setAmbientColor(0f, 0f, 0f);
         glUseProgram(0);
-        // setTitle();
-        System.out.println(visibleObjects);
-
     }
 
 }

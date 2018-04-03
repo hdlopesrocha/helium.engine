@@ -43,8 +43,7 @@ public class BoundingFrustum {
         Boolean intersects = false;
         for (int i = 0; i < 6; ++i) {
             PlaneIntersectionType planeIntersectionType = box.intersects(this.planes[i]);
-            if (planeIntersectionType == PlaneIntersectionType.Front) {
-
+            if (planeIntersectionType == PlaneIntersectionType.Back) {
                 return ContainmentType.Disjoint;
             }
             if (planeIntersectionType == PlaneIntersectionType.Intersecting) {
@@ -52,24 +51,21 @@ public class BoundingFrustum {
             }
 
         }
-        return intersects ? ContainmentType.Intersects
-                : ContainmentType.Contains;
+        return intersects ? ContainmentType.Intersects : ContainmentType.Contains;
     }
 
     public ContainmentType contains(BoundingSphere sphere) {
-        float val;
-        ContainmentType result = ContainmentType.Contains;
-
+        boolean intersects = false;
         for (int i = 0; i < 6; ++i) {
             Planef plane = planes[i];
-            val = Intersectionf.distancePointPlane(sphere.x, +sphere.y, sphere.z, plane.a, plane.b, plane.c, plane.d);
-            if (val < -sphere.r)
+            float dist = Intersectionf.distancePointPlane(sphere.x, +sphere.y, sphere.z, plane.a, plane.b, plane.c, plane.d);
+            if (dist < -sphere.r)
                 return ContainmentType.Disjoint;
-            else if (val < sphere.r)
-                result = ContainmentType.Intersects;
+            else if (dist < sphere.r) {
+                intersects = true;
+            }
         }
-        return result;
-
+        return intersects ? ContainmentType.Intersects : ContainmentType.Contains;
     }
 
     public ContainmentType contains(Vector3f point) {

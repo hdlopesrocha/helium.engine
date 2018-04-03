@@ -82,6 +82,10 @@ public class BoundingBox {
         return len.x;
     }
 
+    public Vector3f getLen() {
+        return len;
+    }
+
     /*
      * (non-Javadoc)
      *
@@ -278,7 +282,7 @@ public class BoundingBox {
         if (inter) {
             return PlaneIntersectionType.Intersecting;
         }
-        if (Intersectionf.distancePointPlane(getMinX(), getMinY(), getMinZ(), plane.a, plane.b, plane.c, plane.d) > 0) {
+        if (Intersectionf.distancePointPlane(getMinX(), getMinY(), getMinZ(), plane.a, plane.b, plane.c, plane.d) < 0) {
             return PlaneIntersectionType.Back;
         } else {
             return PlaneIntersectionType.Front;

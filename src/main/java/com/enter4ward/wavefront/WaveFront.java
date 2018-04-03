@@ -43,7 +43,7 @@ public class WaveFront {
      * @param file the file
      * @throws IOException Signals that an I/O exception has occurred.
      */
-    public WaveFront(final File file) throws IOException {
+    public WaveFront(final InputStream file) throws IOException {
         groups = new TreeMap<String, Group>();
         positions = new ArrayList<String>();
         normals = new ArrayList<String>();
@@ -58,7 +58,7 @@ public class WaveFront {
         textures.add("0.0");
         textures.add("0.0");
 
-        BufferedReader reader = new BufferedReader(new FileReader(file));
+        BufferedReader reader = new BufferedReader(new InputStreamReader(file));
         String line;
         String groupName = "";
         String materialName = "";

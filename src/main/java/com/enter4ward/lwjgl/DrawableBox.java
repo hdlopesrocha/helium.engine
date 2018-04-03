@@ -1,13 +1,16 @@
 package com.enter4ward.lwjgl;
 
+import com.enter4ward.math.VertexData;
 import org.joml.Matrix4f;
+import org.joml.Vector2f;
 import org.joml.Vector3f;
 
 import static org.lwjgl.opengl.GL11.*;
 
 public class DrawableBox {
 
-    BufferObject obj = new BufferObject(false);
+    BufferObject buffer = new BufferObject(false);
+    VertexData data = new VertexData();
 
     public DrawableBox() {
 
@@ -26,20 +29,16 @@ public class DrawableBox {
                 19, 16, 20, 21, 21, 21, 21, 22, 22, 23, 23, 23, 23, 20};
 
         for (int i = 0; i < packedVector.length; i += 8) {
-            obj.addVertex(packedVector[i + 0], packedVector[i + 1],
-                    packedVector[i + 2]);
-
-            obj.addNormal(packedVector[i + 3], packedVector[i + 4],
-                    packedVector[i + 5]);
-            obj.addTexture(packedVector[i + 6], packedVector[i + 7]);
-
+            data.addPosition(new Vector3f(packedVector[i + 0], packedVector[i + 1], packedVector[i + 2]));
+            data.addNormal(new Vector3f(packedVector[i + 3], packedVector[i + 4], packedVector[i + 5]));
+            data.addTexture(new Vector2f(packedVector[i + 6], packedVector[i + 7]));
         }
 
         for (int i = 0; i < ii.length; ++i) {
-            obj.addIndex(ii[i]);
+            data.addIndex(ii[i]);
         }
 
-        obj.buildBuffer();
+        buffer.buildBuffer(data);
     }
 
     /**
@@ -49,19 +48,14 @@ public class DrawableBox {
      */
     public final void draw(final ShaderProgram shader, final Vector3f min,
                            final Vector3f max) {
-
         glDisable(GL_CULL_FACE);
-
         Vector3f scale = new Vector3f(max).sub(min);
         Matrix4f modelMatrix = new Matrix4f().translate(min).scale(scale);
         shader.setModelMatrix(modelMatrix);
-
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        obj.draw(shader);
+        buffer.draw(shader);
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
         glEnable(GL_CULL_FACE);
-
     }
 
 }

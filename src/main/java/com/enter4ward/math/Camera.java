@@ -53,8 +53,8 @@ public class Camera extends BoundingFrustum {
     }
 
     // OK
-    private void calculateProjection(int w, int h) {
-        projectionMatrix.perspective((float) Math.toRadians(45f), (float) w / (float) h, near, far);
+    public void calculateProjection(int w, int h) {
+        projectionMatrix.identity().perspective((float) Math.toRadians(45f), (float) w / (float) h, near, far);
     }
 
     public void move(Vector3f change) {

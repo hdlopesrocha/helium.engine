@@ -13,21 +13,11 @@ import java.io.FileNotFoundException;
  */
 public class LWJGLModel3D extends Model3D {
 
-    /**
-     * Instantiates a new model3 d.
-     *
-     * @param geometry the geometry
-     * @param scale    the scale
-     * @param builder  the builder
-     * @throws FileNotFoundException the file not found exception
-     */
 
 
     public LWJGLModel3D(String filename, float scale, Quaternionf quat, IBufferBuilder builder)
             throws FileNotFoundException {
         super(filename, scale, builder, quat);
-
-
         loadTextures();
     }
 
@@ -43,24 +33,15 @@ public class LWJGLModel3D extends Model3D {
      */
     public void loadTextures() {
 
-
         for (final Material m : materials.values()) {
-
-            m.load(new ITextureLoader() {
-
-                @Override
-                public int load() {
-
-                    return new TextureLoader().loadTexture(m.filename);
-                }
-            });
+            m.load(() -> new TextureLoader().loadTexture(m.filename));
         }
     }
 
     /**
      * Draw.
      *
-     * @param obj     the obj
+     * @param obj     the buffer
      * @param shader  the shader
      * @param handler the handler
      */

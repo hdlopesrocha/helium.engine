@@ -46,7 +46,7 @@ public abstract class IObject3D {
      * @return the model matrix
      */
     public Matrix4f getModelMatrix() {
-        return new Matrix4f().translation(new Vector3f(position)).rotate(rotation);
+        return new Matrix4f().translation(position).rotate(getRotation());
     }
 
     /**

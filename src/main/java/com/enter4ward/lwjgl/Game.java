@@ -3,6 +3,7 @@ package com.enter4ward.lwjgl;
 
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
+import org.lwjgl.glfw.GLFWWindowSizeCallback;
 import org.lwjgl.system.MemoryStack;
 
 import java.nio.IntBuffer;
@@ -17,18 +18,16 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 // TODO: Auto-generated Javadoc
 
 public abstract class Game {
-    public static boolean[] keys = new boolean[65536];
+
     // The window handle
     private long window;
     // Shader variables
     private ShaderProgram program;
+    private KeyboardManager keyboardManager = new KeyboardManager();
+    private int width, height;
 
-    public Game(int w, int h) {
-        // -Djava.library.path="target/natives"
+    public Game() {
         System.out.println("java.library.path=" + System.getProperty("java.library.path"));
-        init(w, h, "Space3D");
-        setup();
-        loop();
     }
 
     public ShaderProgram getProgram() {
@@ -49,13 +48,21 @@ public abstract class Game {
 
     public abstract void update(float deltaTime);
 
+    protected abstract void onWindowResized();
 
     public abstract void draw();
 
+    public void start(int width, int height){
+        this.width = width;
+        this.height = height;
+        init("Space3D");
+        setup();
+        loop();
+    }
 
     public abstract void setup();
 
-    private void init(int width, int height, String title) {
+    private void init(String title) {
         // Setup an error callback. The default implementation
         // will print the error message in System.err.
         GLFWErrorCallback.createPrint(System.err).set();
@@ -78,7 +85,7 @@ public abstract class Game {
         glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
             if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE)
                 glfwSetWindowShouldClose(window, true); // We will detect this in the rendering loop
-            keys[key] = action != GLFW_RELEASE;
+            keyboardManager.setKeyPressed(key, action != GLFW_RELEASE);
         });
 
         // Get the thread stack and push a new frame
@@ -129,8 +136,18 @@ public abstract class Game {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+        glfwSetWindowSizeCallback(window, new GLFWWindowSizeCallback(){
+            @Override
+            public void invoke(long window, int width, int height){
+                Game.this.width = width;
+                Game.this.height = height;
+                Game.this.onWindowResized();
 
+                glViewport(0, 0, width, height);
+            }
+        });
     }
+
 
     private void loop() {
         long time = getTime();
@@ -142,6 +159,7 @@ public abstract class Game {
         while (!glfwWindowShouldClose(window)) {
             // Do a single loop (logic/render)
             time = getTime();
+            keyboardManager.update();
             update((time - oldTime) / 1000f);
 
             // Let the CPU synchronize with the GPU if GPU is tagging behind
@@ -167,7 +185,15 @@ public abstract class Game {
 
     }
 
-    public boolean isKeyDown(int key) {
-        return keys[key];
+    public KeyboardManager getKeyboardManager() {
+        return keyboardManager;
+    }
+
+    public int getWidth() {
+        return width;
+    }
+
+    public int getHeight() {
+        return height;
     }
 }
