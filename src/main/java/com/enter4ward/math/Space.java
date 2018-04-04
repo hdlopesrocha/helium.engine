@@ -16,6 +16,7 @@ public class Space {
     };
 
 
+    private static final BoundingBox TEMP_BOUNDING_BOX = new BoundingBox(new Vector3f(), new Vector3f());
     private static final Vector3f TEMP_LENGTH = new Vector3f();
     private static HashMap<Vector3f, Vector3f> lengths = new HashMap<>();
 
@@ -200,15 +201,12 @@ public class Space {
             return super.toString();
         }
 
-        private final BoundingBox TEMP_BOUNDING_BOX = new BoundingBox(new Vector3f(), new Vector3f());
 
 
         private Node buildIfContains(final int i, BoundingSphere sph) {
             final float lenX = getLengthX() * 0.5f;
             final float lenY = getLengthY() * 0.5f;
             final float lenZ = getLengthZ() * 0.5f;
-
-
             final Vector3f len = recycle(TEMP_LENGTH.set(lenX, lenY, lenZ));
 
             final int px = (i / 9) % 3;

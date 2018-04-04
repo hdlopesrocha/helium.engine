@@ -206,15 +206,14 @@ public class ShaderProgram {
         glUseProgramObjectARB(program);
     }
 
-    /**
-     * Sets the projection matrix.
-     *
-     * @param camera the camera
-     */
+    private static final Matrix4f TEMP_VIEW_PROJECTION_MATRIX = new Matrix4f();
+    private static final Matrix4f TEMP_MODEL_MATRIX = new Matrix4f();
+    private static final float[] TEMP_MATRIX_BUFFER = new float[16];
+
     public void update(Camera camera) {
         // Upload matrices to the uniform variables
-        Matrix4f viewProjectionMatrix = camera.getViewProjectionMatrix();
-        float[] mat = viewProjectionMatrix.get(new float[16]);
+        Matrix4f viewProjectionMatrix = camera.getViewProjectionMatrix(TEMP_VIEW_PROJECTION_MATRIX);
+        float[] mat = viewProjectionMatrix.get(TEMP_MATRIX_BUFFER);
         glUniformMatrix4fvARB(viewProjectionMatrixLocation, false, mat);
 
 
@@ -425,11 +424,11 @@ public class ShaderProgram {
      */
     public void setModelMatrix(Matrix4f matrix) {
         use();
-        glUniformMatrix4fvARB(modelMatrixLocation, false, matrix.get(new float[16]));
+        glUniformMatrix4fvARB(modelMatrixLocation, false, matrix.get(TEMP_MATRIX_BUFFER));
     }
 
     public void reset() {
-        setModelMatrix(new Matrix4f().identity());
+        setModelMatrix(TEMP_MODEL_MATRIX.identity());
         glEnable(GL_CULL_FACE);
         glEnable(GL_DEPTH_TEST);
         setLightEnabled(true);

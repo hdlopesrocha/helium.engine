@@ -45,8 +45,8 @@ public abstract class IObject3D {
      *
      * @return the model matrix
      */
-    public Matrix4f getModelMatrix() {
-        return new Matrix4f().translation(position).rotate(getRotation());
+    public Matrix4f getModelMatrix(Matrix4f result) {
+        return result.translation(position).rotate(getRotation());
     }
 
     /**
@@ -73,9 +73,9 @@ public abstract class IObject3D {
      *
      * @return the bounding sphere
      */
-    public BoundingSphere getBoundingSphere() {
+    public BoundingSphere getBoundingSphere(BoundingSphere result) {
         BoundingSphere cont = model.getContainer();
-        BoundingSphere result = new BoundingSphere(model.getContainer());
+        result.set(model.getContainer());
         result.rotate(rotation);
         result.add(position);
         result.r = cont.r;
@@ -106,8 +106,10 @@ public abstract class IObject3D {
      * @param space the space
      * @return the i object3 d
      */
+
+    private static final BoundingSphere TEMP_BOUNDING_SPHERE = new BoundingSphere();
     protected Space.Node insert(final Space space) {
-        return space.insert(getBoundingSphere(), this);
+        return space.insert(getBoundingSphere(TEMP_BOUNDING_SPHERE), this);
     }
 
     /**

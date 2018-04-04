@@ -46,12 +46,15 @@ public class DrawableBox {
      *
      * @param shader the shader
      */
+    private static final Vector3f TEMP_SCALE = new Vector3f();
+    private static final Matrix4f TEMP_MATRIX = new Matrix4f();
+
     public final void draw(final ShaderProgram shader, final Vector3f min,
                            final Vector3f max) {
         glDisable(GL_CULL_FACE);
-        Vector3f scale = new Vector3f(max).sub(min);
-        Matrix4f modelMatrix = new Matrix4f().translate(min).scale(scale);
-        shader.setModelMatrix(modelMatrix);
+        TEMP_SCALE.set(max).sub(min);
+        TEMP_MATRIX.translation(min).scale(TEMP_SCALE);
+        shader.setModelMatrix(TEMP_MATRIX);
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         buffer.draw(shader);
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);

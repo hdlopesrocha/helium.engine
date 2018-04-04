@@ -47,6 +47,9 @@ public class DrawableSphere {
      * @param shader   the shader
      * @param rotation
      */
+
+    private static final Matrix4f TEMP_MATRIX = new Matrix4f();
+
     public final void draw(final ShaderProgram shader, BoundingSphere sph, Quaternionf rotation) {
         //System.out.println(min.toString()+" : "+max.toString());
 
@@ -58,11 +61,11 @@ public class DrawableSphere {
             glDisable(GL_CULL_FACE);
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         }
-        Matrix4f modelMatrix = new Matrix4f().translate(sph).scale(sph.r);
+        TEMP_MATRIX.translation(sph).scale(sph.r);
         if (rotation != null) {
-            modelMatrix.rotate(rotation);
+            TEMP_MATRIX.rotate(rotation);
         }
-        shader.setModelMatrix(modelMatrix);
+        shader.setModelMatrix(TEMP_MATRIX);
         buffer.draw(shader);
         if (lines) {
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);

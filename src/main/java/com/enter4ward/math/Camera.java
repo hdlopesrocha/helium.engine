@@ -5,7 +5,10 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 public class Camera extends BoundingFrustum {
-
+    private final static Matrix4f TEMP_LOOK_MATRIX = new Matrix4f();
+    private final static Matrix4f TEMP_MOVE_MATRIX = new Matrix4f();
+    private static final Matrix4f TEMP_VIEW_MATRIX = new Matrix4f();
+    private static final Quaternionf TEMP_AXIS_ROTATION = new Quaternionf();
     private final Quaternionf rotation;
 
     private final Vector3f position;
@@ -24,21 +27,19 @@ public class Camera extends BoundingFrustum {
     }
 
     // OK
-    private Matrix4f getViewMatrix() {
-        Vector3f translation = new Vector3f(position).mul(-1f);
-        Matrix4f result = new Matrix4f().rotate(rotation);
-        result.translate(translation);
+    private Matrix4f getViewMatrix(Matrix4f result) {
+        result.rotation(rotation).translate(-position.x,-position.y,-position.z);
         return result;
     }
 
-    public Matrix4f getViewProjectionMatrix() {
-        Matrix4f matrix = new Matrix4f(projectionMatrix).mul(getViewMatrix());
-        update(matrix);
-        return matrix;
+    public Matrix4f getViewProjectionMatrix(Matrix4f result) {
+        result.set(projectionMatrix).mul(getViewMatrix(TEMP_VIEW_MATRIX));
+        update(result);
+        return result;
     }
 
     public void rotate(float x, float y, float z, float w) {
-        Quaternionf quat = new Quaternionf().fromAxisAngleRad(x, y, z, w).mul(rotation);
+        Quaternionf quat = TEMP_AXIS_ROTATION.fromAxisAngleRad(x, y, z, w).mul(rotation);
         rotation.set(quat).normalize();
     }
 
@@ -49,7 +50,7 @@ public class Camera extends BoundingFrustum {
     // OK
     public void lookAt(Vector3f pos, Vector3f lookAt, Vector3f up) {
         position.set(pos);
-        rotation.setFromNormalized(new Matrix4f().lookAt(pos, lookAt, up));
+        rotation.setFromNormalized(TEMP_LOOK_MATRIX.lookAt(pos, lookAt, up));
     }
 
     // OK
@@ -66,11 +67,8 @@ public class Camera extends BoundingFrustum {
     }
 
     public void move(float front, float down, float right) {
-        final Vector3f trans = new Vector3f(right, down, front);
-        final Matrix4f mat = new Matrix4f().translation(trans).rotate(rotation).invert();
-        final Vector3f delta = new Vector3f();
-        mat.getTranslation(delta);
-        position.add(delta);
+        TEMP_MOVE_MATRIX.translationRotate(right, down, front,rotation).translate(position.mul(-1)).invert();
+        TEMP_MOVE_MATRIX.getTranslation(position);
     }
 
     public Vector3f getPosition() {

@@ -17,9 +17,13 @@ import static org.lwjgl.opengl.GL20.glUseProgram;
 
 public class Main extends Game {
 
-    private static final int NUMBER_OF_OBJECTS = 0;
+    //private static final int NUMBER_OF_OBJECTS = 0;
     //private static final int NUMBER_OF_OBJECTS = 500000;
-    //private static final int NUMBER_OF_OBJECTS = 1000000;
+    private static final BoundingSphere TEMP_BOUNDING_SPHERE = new BoundingSphere();
+    private static final BoundingSphere TEMP_BOUNDING_SPHERE_2 = new BoundingSphere();
+    private static final Vector3f TEMP_MIN = new Vector3f();
+    private static final Vector3f TEMP_MAX = new Vector3f();
+    private static final int NUMBER_OF_OBJECTS = 1000000;
     private static final Random RANDOM = new Random();
     /**
      * The buffer builder.
@@ -81,22 +85,22 @@ public class Main extends Game {
             e.printStackTrace();
         }
         box = new Object3D(new Vector3f(0, 0, 0), boxModel);
-        box.setNode(space.insert(box.getBoundingSphere(), box));
+        box.setNode(space.insert(box.getBoundingSphere(TEMP_BOUNDING_SPHERE), box));
 
         new Object3D(new Vector3f(0, 0, 0), boxModel) {{
-            setNode(space.insert(getBoundingSphere(), this));
+            setNode(space.insert(getBoundingSphere(TEMP_BOUNDING_SPHERE), this));
         }};
         new Object3D(new Vector3f(DISTANCE, 0, 0), boxModel) {{
-            setNode(space.insert(getBoundingSphere(), this));
+            setNode(space.insert(getBoundingSphere(TEMP_BOUNDING_SPHERE), this));
         }};
         new Object3D(new Vector3f(-DISTANCE, 0, 0), boxModel) {{
-            setNode(space.insert(getBoundingSphere(), this));
+            setNode(space.insert(getBoundingSphere(TEMP_BOUNDING_SPHERE), this));
         }};
         new Object3D(new Vector3f(0, 0, DISTANCE), boxModel) {{
-            setNode(space.insert(getBoundingSphere(), this));
+            setNode(space.insert(getBoundingSphere(TEMP_BOUNDING_SPHERE), this));
         }};
         new Object3D(new Vector3f(0, 0, -DISTANCE), boxModel) {{
-            setNode(space.insert(getBoundingSphere(), this));
+            setNode(space.insert(getBoundingSphere(TEMP_BOUNDING_SPHERE), this));
         }};
 
         for (int i = 0; i < NUMBER_OF_OBJECTS; ++i) {
@@ -120,7 +124,7 @@ public class Main extends Game {
                 (RANDOM.nextFloat() - 0.5f) * MAP_SIZE,
                 (RANDOM.nextFloat() - 0.5f) * MAP_SIZE,
                 (RANDOM.nextFloat() - 0.5f) * MAP_SIZE), boxModel) {{
-            setNode(space.insert(getBoundingSphere(), this));
+            setNode(space.insert(getBoundingSphere(TEMP_BOUNDING_SPHERE), this));
         }};
     }
 
@@ -135,26 +139,24 @@ public class Main extends Game {
                 sphere.y + (float) (r * Math.sin(t) * Math.sin(s)),
                 sphere.z + (float) (r * Math.cos(t))
         ), boxModel) {{
-            setNode(space.insert(getBoundingSphere(), this));
+            setNode(space.insert(getBoundingSphere(TEMP_BOUNDING_SPHERE), this));
         }};
     }
-
     @Override
     public void update(float deltaTime) {
         time += deltaTime;
         getProgram().setTime(time);
 
-        Vector3f boxPos = new Vector3f(DISTANCE * (float) Math.sin(SPEED * time), 0f, DISTANCE * (float) Math.cos(SPEED * time));
-        box.setPosition(boxPos);
-        box.setNode(space.update(box.getBoundingSphere(), box.getNode(), box));
+        box.getPosition().set(DISTANCE * (float) Math.sin(SPEED * time), 0f, DISTANCE * (float) Math.cos(SPEED * time));
+        box.setNode(space.update(box.getBoundingSphere(TEMP_BOUNDING_SPHERE), box.getNode(), box));
         tests = new ArrayList<>();
         hits.clear();
         tests.clear();
-        BoundingSphere boxSphere = box.getBoundingSphere();
+        BoundingSphere boxSphere = box.getBoundingSphere(TEMP_BOUNDING_SPHERE);
         space.handleObjectCollisions(boxSphere, obj -> {
             Object3D o3d = (Object3D) obj;
 
-            if (box != o3d && boxSphere.intersects(o3d.getBoundingSphere())) {
+            if (box != o3d && boxSphere.intersects(o3d.getBoundingSphere(TEMP_BOUNDING_SPHERE_2))) {
                 hits.add(o3d);
             } else {
                 tests.add(o3d);
@@ -254,7 +256,7 @@ public class Main extends Game {
 
         if (getKeyboardManager().isKeyDown(GLFW.GLFW_KEY_U)) {
             space.clear();
-            box.setNode(space.insert(box.getBoundingSphere(), box));
+            box.setNode(space.insert(box.getBoundingSphere(TEMP_BOUNDING_SPHERE), box));
         }
 
 
@@ -293,16 +295,16 @@ public class Main extends Game {
                     getProgram().setMaterialAlpha(1f);
                     getProgram().setOpaque(true);
 
-                    Vector3f min = new Vector3f(node.getMinX(), node.getMinY(), node.getMinZ());
-                    Vector3f max = new Vector3f(node.getMaxX(), node.getMaxY(), node.getMaxZ());
+                    TEMP_MIN.set(node.getMinX(), node.getMinY(), node.getMinZ());
+                    TEMP_MAX.set(node.getMaxX(), node.getMaxY(), node.getMaxZ());
                     glBindTexture(GL_TEXTURE_2D, 0);
                     getProgram().setLightEnabled(false);
-                    cubeModel.draw(getProgram(), min, max);
+                    cubeModel.draw(getProgram(), TEMP_MIN, TEMP_MAX);
                 }
             } else if (obj instanceof Object3D) {
 
                 Object3D obj3d = (Object3D) obj;
-                if (camera.contains(obj3d.getBoundingSphere()) != ContainmentType.Disjoint) {
+                if (camera.contains(obj3d.getBoundingSphere(TEMP_BOUNDING_SPHERE)) != ContainmentType.Disjoint) {
                     if (hits.contains(obj3d)) {
                         getProgram().setAmbientColor(1f, 0f, 0f);
                     } else if (obj3d == box) {
@@ -335,25 +337,22 @@ public class Main extends Game {
                 getProgram().setAmbientColor(1f, 1f, 1f);
                 getProgram().setLightEnabled(false);
 
-
                 if (hyperCubeMode) {
                     float hyperFactor = 2;
-                    Vector3f min = new Vector3f(node.getMinX(), node.getMinY(), node.getMinZ());
+                    TEMP_MIN.set(node.getMinX(), node.getMinY(), node.getMinZ());
                     float shiftX = hyperFactor * (float) (Math.sin(node.getMaxX()) * Math.sin(time + node.getMaxX()));
                     float shiftY = hyperFactor * (float) (Math.cos(node.getMaxY()) * Math.sin(time + node.getMaxY()));
                     float shiftZ = hyperFactor * (float) (Math.cos(node.getMaxZ()) * Math.cos(time + node.getMaxZ()));
-
-                    Vector3f max = new Vector3f(
+                    TEMP_MAX.set(
                             node.getMaxX() + shiftX,
                             node.getMaxY() + shiftY,
                             node.getMaxZ() + shiftZ);
-                    cubeModel.draw(getProgram(), min, max);
                 } else {
-                    Vector3f min = new Vector3f(node.getMinX(), node.getMinY(), node.getMinZ());
-                    Vector3f max = new Vector3f(node.getMaxX(), node.getMaxY(), node.getMaxZ());
-                    glBindTexture(GL_TEXTURE_2D, 0);
-                    cubeModel.draw(getProgram(), min, max);
+                    TEMP_MIN.set(node.getMinX(), node.getMinY(), node.getMinZ());
+                    TEMP_MAX.set(node.getMaxX(), node.getMaxY(), node.getMaxZ());
                 }
+                glBindTexture(GL_TEXTURE_2D, 0);
+                cubeModel.draw(getProgram(), TEMP_MIN, TEMP_MAX);
             }
         });
         glUseProgram(0);
