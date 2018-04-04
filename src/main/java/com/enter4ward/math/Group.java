@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Group extends BoundingSphere {
-    private List<IBufferObject> subGroups = new ArrayList<IBufferObject>();
-    private String name;
+    private final List<IBufferObject> subGroups = new ArrayList<IBufferObject>();
+    private final String name;
 
     public Group(String n) {
         name = n;
@@ -14,7 +14,6 @@ public class Group extends BoundingSphere {
     public String getName() {
         return name;
     }
-
 
     public void addBuffer(IBufferObject buffer) {
         subGroups.add(buffer);

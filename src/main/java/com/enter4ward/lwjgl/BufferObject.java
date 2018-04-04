@@ -12,11 +12,6 @@ import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL20.*;
 import static org.lwjgl.opengles.GLES20.GL_ARRAY_BUFFER;
 
-// TODO: Auto-generated Javadoc
-
-/**
- * The Class BufferObject.
- */
 public class BufferObject extends IBufferObject {
 
     public static final int elementBytes = 4;

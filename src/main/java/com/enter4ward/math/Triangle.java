@@ -1,28 +1,15 @@
 package com.enter4ward.math;
 
-// TODO: Auto-generated Javadoc
-
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
-/**
- * The Class Triangle.
- */
 public class Triangle {
 
-    /**
-     * The c.
-     */
-    private Vector3f a, b, c;
+    private final Vector3f a;
+    private final Vector3f b;
+    private final Vector3f c;
 
-    /**
-     * Instantiates a new triangle.
-     *
-     * @param a the a
-     * @param b the b
-     * @param c the c
-     */
     public Triangle(Vector3f a, Vector3f b, Vector3f c) {
         this.a = a;
         this.b = b;
@@ -41,12 +28,6 @@ public class Triangle {
         return c;
     }
 
-    /**
-     * Contains.
-     *
-     * @param point the point
-     * @return true, if successful
-     */
     public boolean contains(Vector3f point) {
         Vector3f aa = getA();
         Vector3f bb = getB();
@@ -59,11 +40,6 @@ public class Triangle {
         return area1 + area2 + area3 < thisArea + 0.001f;
     }
 
-    /**
-     * Gets the area.
-     *
-     * @return the area
-     */
     public float getArea() {
         float abx = b.x - a.x;
         float aby = b.y - a.y;
@@ -77,11 +53,6 @@ public class Triangle {
         throw new NotImplementedException();
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see java.lang.Object#toString()
-     */
     @Override
     public String toString() {
         return "{a:" + a + ", b:" + b + ", " + c + "}";

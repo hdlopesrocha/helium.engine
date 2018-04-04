@@ -5,19 +5,11 @@ import org.joml.Planef;
 import org.joml.Vector3f;
 
 public abstract class IBoundingBox {
-    /**
-     * The max.
-     */
+
     protected Vector3f min;
 
-    /**
-     * Contains.
-     *
-     * @param point the point
-     * @return the containment type
-     */
     public ContainmentType contains(final Vector3f point) {
-        // first we get if point is out of box
+
         if (point.x < getMin().x || point.x > getMaxX()
                 || point.y < getMin().y || point.y > getMaxY()
                 || point.z < getMin().z || point.z > getMaxZ()) {
@@ -31,56 +23,20 @@ public abstract class IBoundingBox {
             return ContainmentType.Contains;
     }
 
-    /**
-     * Gets the length x.
-     *
-     * @return the length x
-     */
     public abstract float getLengthX();
 
     public abstract Vector3f getLen(Vector3f vec);
 
-    /**
-     * Gets the length y.
-     *
-     * @return the length y
-     */
     public abstract float getLengthY();
 
-    /**
-     * Gets the length z.
-     *
-     * @return the length z
-     */
     public abstract float getLengthZ();
 
-    /**
-     * Gets the center x.
-     *
-     * @return the center x
-     */
     public abstract float getCenterX();
 
-    /**
-     * Gets the center y.
-     *
-     * @return the center y
-     */
     public abstract float getCenterY();
 
-    /**
-     * Gets the center z.
-     *
-     * @return the center z
-     */
     public abstract float getCenterZ();
 
-    /**
-     * Contains.
-     *
-     * @param box the box
-     * @return the containment type
-     */
     public ContainmentType contains(BoundingBox box) {
         // test if all corner is in the same side of a face by just checking min
         // and max
@@ -102,13 +58,6 @@ public abstract class IBoundingBox {
         return ContainmentType.Intersects;
     }
 
-    /**
-     * Contains.
-     *
-     * @param sphere the sphere
-     * @return the containment type
-     * @author MonoGame
-     */
     public ContainmentType contains(final BoundingSphere sphere) {
         final float sx = sphere.x;
         final float sy = sphere.y;
@@ -170,12 +119,6 @@ public abstract class IBoundingBox {
         return ContainmentType.Disjoint;
     }
 
-    /**
-     * Only contains.
-     *
-     * @param sphere the sphere
-     * @return true, if successful
-     */
     public boolean containsSphere(final BoundingSphere sphere) {
         final float sx = sphere.x;
         final float sy = sphere.y;
@@ -205,12 +148,6 @@ public abstract class IBoundingBox {
         }
     }
 
-    /**
-     * Intersects.
-     *
-     * @param box the box
-     * @return true, if successful
-     */
     public boolean intersects(BoundingBox box) {
         if ((getMaxX() >= box.getMin().x)
                 && (getMin().x <= box.getMaxX())) {

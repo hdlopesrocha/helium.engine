@@ -1,16 +1,8 @@
 package com.enter4ward.math;
 
-// TODO: Auto-generated Javadoc
-//MIT License - Copyright (C) The Mono.Xna Team
-//This file is subject to the terms and conditions defined in
-//file 'LICENSE.txt', which is part of this source code package.
-
 import org.joml.Planef;
 import org.joml.Vector3f;
 
-/**
- * The Class Ray.
- */
 public class Ray {
 
     private static final Vector3f TEMP_IP = new Vector3f();
@@ -18,68 +10,28 @@ public class Ray {
     private static final Vector3f TEMP_IV = new Vector3f();
     private static final Vector3f TEMP_IW = new Vector3f();
     private static final Vector3f TEMP_DIFFERENCE = new Vector3f();
-    /**
-     * The Direction.
-     */
+
     private Vector3f direction;
-    /**
-     * The Position.
-     */
+
     private Vector3f position;
 
-    /**
-     * Instantiates a new ray.
-     *
-     * @param Vector3f  the position
-     * @param Vector3f2 the direction
-     */
     public Ray(Vector3f Vector3f, Vector3f Vector3f2) {
         this.position = Vector3f;
         this.direction = Vector3f2;
     }
 
-    // adapted from
-    // http://www.scratchapixel.com/lessons/3d-basic-lessons/lesson-7-intersecting-simple-shapes/ray-box-intersection/
-
-    /**
-     * Gets the direction.
-     *
-     * @return the direction
-     */
     public Vector3f getDirection() {
         return direction;
     }
 
-    /*
-     * public float? Intersects(BoundingFrustum frustum) { if (frustum == null)
-     * { throw new ArgumentNullException("frustum"); }
-     *
-     * return frustum.Intersects(this); }
-     */
-
-    /**
-     * Sets the direction.
-     *
-     * @param direction the new direction
-     */
     public void setDirection(Vector3f direction) {
         this.direction = direction;
     }
 
-    /**
-     * Gets the position.
-     *
-     * @return the position
-     */
     public Vector3f getPosition() {
         return position;
     }
 
-    /**
-     * Sets the position.
-     *
-     * @param position the new position
-     */
     public void setPosition(Vector3f position) {
         this.position = position;
     }
@@ -93,12 +45,6 @@ public class Ray {
         return false;
     }
 
-    /**
-     * Intersects.
-     *
-     * @param box the box
-     * @return the float
-     */
     public Float intersects(IBoundingBox box) {
         float Epsilon = 1e-6f;
 
@@ -179,33 +125,15 @@ public class Ray {
         return tMin;
     }
 
-    /**
-     * Intersects.
-     *
-     * @param plane the plane
-     * @return the float
-     */
     public Float intersects(Planef plane) {
 
         return null;
     }
 
-    /**
-     * Intersects.
-     *
-     * @param triangle the triangle
-     * @return the i Vector3f
-     */
     public synchronized Float intersects(final Triangle triangle) {
         return null;
     }
 
-    /**
-     * Intersects.
-     *
-     * @param sphere the sphere
-     * @return the float
-     */
     public Float intersects(BoundingSphere sphere) {
         // Find the vector between where the ray starts the the sphere's centre
         Vector3f difference = TEMP_DIFFERENCE.set(sphere)
@@ -243,11 +171,6 @@ public class Ray {
         return (dist < 0) ? null : distanceAlongRay - (float) Math.sqrt(dist);
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see java.lang.Object#toString()
-     */
     public String toString() {
         return "{{Position:" + position.toString() + " Direction:"
                 + direction.toString() + "}}";

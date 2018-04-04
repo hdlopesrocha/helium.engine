@@ -6,24 +6,12 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 
-/**
- * The Class MaterialLibrary.
- */
 public class MaterialLibrary {
 
-    /**
-     * The materials.
-     */
-    private ArrayList<Material> materials = new ArrayList<Material>();
+    private final ArrayList<Material> materials = new ArrayList<>();
 
-    /**
-     * Instantiates a new material library.
-     *
-     * @param file the file
-     * @throws IOException Signals that an I/O exception has occurred.
-     */
-    public MaterialLibrary(final File file) throws IOException {
-        BufferedReader reader = new BufferedReader(new FileReader(file));
+    public MaterialLibrary(final InputStream file) throws IOException {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(file));
         String line;
         Material currentMaterial = null;
         while ((line = reader.readLine()) != null) {
@@ -34,39 +22,51 @@ public class MaterialLibrary {
             if (tok.hasMoreTokens()) {
                 String cmd = tok.nextToken();
                 if (tok.hasMoreElements()) {
-                    if (cmd.equals("newmtl")) {
-                        currentMaterial = new Material(tok.nextToken());
-                        materials.add(currentMaterial);
-                    } else if (cmd.equals("map_Kd")) {
-                        currentMaterial.setMapKd(tok.nextToken());
-                    } else if (cmd.equals("Ka")) {
-                        currentMaterial.setKa(Float.valueOf(tok.nextToken()),
-                                Float.valueOf(tok.nextToken()),
-                                Float.valueOf(tok.nextToken()));
-                    } else if (cmd.equals("Kd")) {
-                        currentMaterial.setKd(Float.valueOf(tok.nextToken()),
-                                Float.valueOf(tok.nextToken()),
-                                Float.valueOf(tok.nextToken()));
-                    } else if (cmd.equals("Ks")) {
-                        currentMaterial.setKs(Float.valueOf(tok.nextToken()),
-                                Float.valueOf(tok.nextToken()),
-                                Float.valueOf(tok.nextToken()));
-                    } else if (cmd.equals("Tf")) {
-                        currentMaterial.setTf(Float.valueOf(tok.nextToken()),
-                                Float.valueOf(tok.nextToken()),
-                                Float.valueOf(tok.nextToken()));
-                    } else if (cmd.equals("illum")) {
-                        currentMaterial
-                                .setIllum(Float.valueOf(tok.nextToken()));
-                    } else if (cmd.equals("d")) {
-                        currentMaterial.setD(Float.valueOf(tok.nextToken()));
-                    } else if (cmd.equals("Ns")) {
-                        currentMaterial.setNs(Float.valueOf(tok.nextToken()));
-                    } else if (cmd.equals("sharpness")) {
-                        currentMaterial.setSharpness(Float.valueOf(tok
-                                .nextToken()));
-                    } else if (cmd.equals("Ni")) {
-                        currentMaterial.setNi(Float.valueOf(tok.nextToken()));
+                    switch (cmd) {
+                        case "newmtl":
+                            currentMaterial = new Material(tok.nextToken());
+                            materials.add(currentMaterial);
+                            break;
+                        case "map_Kd":
+                            currentMaterial.setMapKd(tok.nextToken());
+                            break;
+                        case "Ka":
+                            currentMaterial.setKa(Float.valueOf(tok.nextToken()),
+                                    Float.valueOf(tok.nextToken()),
+                                    Float.valueOf(tok.nextToken()));
+                            break;
+                        case "Kd":
+                            currentMaterial.setKd(Float.valueOf(tok.nextToken()),
+                                    Float.valueOf(tok.nextToken()),
+                                    Float.valueOf(tok.nextToken()));
+                            break;
+                        case "Ks":
+                            currentMaterial.setKs(Float.valueOf(tok.nextToken()),
+                                    Float.valueOf(tok.nextToken()),
+                                    Float.valueOf(tok.nextToken()));
+                            break;
+                        case "Tf":
+                            currentMaterial.setTf(Float.valueOf(tok.nextToken()),
+                                    Float.valueOf(tok.nextToken()),
+                                    Float.valueOf(tok.nextToken()));
+                            break;
+                        case "illum":
+                            currentMaterial
+                                    .setIllum(Float.valueOf(tok.nextToken()));
+                            break;
+                        case "d":
+                            currentMaterial.setD(Float.valueOf(tok.nextToken()));
+                            break;
+                        case "Ns":
+                            currentMaterial.setNs(Float.valueOf(tok.nextToken()));
+                            break;
+                        case "sharpness":
+                            currentMaterial.setSharpness(Float.valueOf(tok
+                                    .nextToken()));
+                            break;
+                        case "Ni":
+                            currentMaterial.setNi(Float.valueOf(tok.nextToken()));
+                            break;
                     }
                 }
             }
@@ -76,12 +76,6 @@ public class MaterialLibrary {
 
     }
 
-    /**
-     * Materials to json.
-     *
-     * @return the string
-     * the JSON exception
-     */
     public final JSONObject toJSON() {
         JSONObject jmaterials = new JSONObject();
 
@@ -92,12 +86,6 @@ public class MaterialLibrary {
         return jmaterials;
     }
 
-    /**
-     * To file.
-     *
-     * @return the file
-     * @throws IOException Signals that an I/O exception has occurred.
-     */
     public final File toFile() throws IOException {
         File file = File.createTempFile("file", "temp");
         BufferedWriter bw1 = new BufferedWriter(new FileWriter(file));

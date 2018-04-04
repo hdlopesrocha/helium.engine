@@ -8,5 +8,4 @@ public interface DrawHandler {
 
     Matrix4f onDraw(IObject3D obj, Group group, BufferObject buffer);
 
-
 }

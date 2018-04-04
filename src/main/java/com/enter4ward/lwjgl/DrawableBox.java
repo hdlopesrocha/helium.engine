@@ -9,8 +9,10 @@ import static org.lwjgl.opengl.GL11.*;
 
 public class DrawableBox {
 
-    BufferObject buffer = new BufferObject(false);
-    VertexData data = new VertexData();
+    private static final Vector3f TEMP_SCALE = new Vector3f();
+    private static final Matrix4f TEMP_MATRIX = new Matrix4f();
+    final BufferObject buffer = new BufferObject(false);
+    final VertexData data = new VertexData();
 
     public DrawableBox() {
 
@@ -29,7 +31,7 @@ public class DrawableBox {
                 19, 16, 20, 21, 21, 21, 21, 22, 22, 23, 23, 23, 23, 20};
 
         for (int i = 0; i < packedVector.length; i += 8) {
-            data.addPosition(new Vector3f(packedVector[i + 0], packedVector[i + 1], packedVector[i + 2]));
+            data.addPosition(new Vector3f(packedVector[i], packedVector[i + 1], packedVector[i + 2]));
             data.addNormal(new Vector3f(packedVector[i + 3], packedVector[i + 4], packedVector[i + 5]));
             data.addTexture(new Vector2f(packedVector[i + 6], packedVector[i + 7]));
         }
@@ -40,14 +42,6 @@ public class DrawableBox {
 
         buffer.buildBuffer(data);
     }
-
-    /**
-     * Draw.
-     *
-     * @param shader the shader
-     */
-    private static final Vector3f TEMP_SCALE = new Vector3f();
-    private static final Matrix4f TEMP_MATRIX = new Matrix4f();
 
     public final void draw(final ShaderProgram shader, final Vector3f min,
                            final Vector3f max) {

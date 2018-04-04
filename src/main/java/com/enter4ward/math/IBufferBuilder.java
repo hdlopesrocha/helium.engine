@@ -4,5 +4,4 @@ public interface IBufferBuilder {
 
     IBufferObject build();
 
-
 }

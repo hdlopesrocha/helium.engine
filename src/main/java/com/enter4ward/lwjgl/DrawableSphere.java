@@ -1,6 +1,5 @@
 package com.enter4ward.lwjgl;
 
-
 import com.enter4ward.math.BoundingSphere;
 import com.enter4ward.math.VertexData;
 import org.joml.Matrix4f;
@@ -12,9 +11,10 @@ import static org.lwjgl.opengl.GL11.*;
 
 public class DrawableSphere {
 
-    VertexData data = new VertexData();
-    BufferObject buffer = new BufferObject(false);
-    boolean lines;
+    private static final Matrix4f TEMP_MATRIX = new Matrix4f();
+    final VertexData data = new VertexData();
+    final BufferObject buffer = new BufferObject(false);
+    final boolean lines;
 
     public DrawableSphere(boolean lines, boolean invertNormals) {
         this.lines = lines;
@@ -26,7 +26,7 @@ public class DrawableSphere {
 
         for (int i = 0; i < packedVector.length; i += 8) {
 
-            Vector3f v3 = new Vector3f(packedVector[i + 0], packedVector[i + 1], packedVector[i + 2]).normalize();
+            Vector3f v3 = new Vector3f(packedVector[i], packedVector[i + 1], packedVector[i + 2]).normalize();
 
             data.addPosition(v3);
             data.addNormal(new Vector3f(packedVector[i + 3], packedVector[i + 4], packedVector[i + 5]).mul(invertNormals ? -1 : 1));
@@ -41,18 +41,7 @@ public class DrawableSphere {
         buffer.buildBuffer(data);
     }
 
-    /**
-     * Draw.
-     *
-     * @param shader   the shader
-     * @param rotation
-     */
-
-    private static final Matrix4f TEMP_MATRIX = new Matrix4f();
-
     public final void draw(final ShaderProgram shader, BoundingSphere sph, Quaternionf rotation) {
-        //System.out.println(min.toString()+" : "+max.toString());
-
 
         if (lines) {
             shader.setAmbientColor(1, 1, 1);
@@ -74,6 +63,5 @@ public class DrawableSphere {
         shader.reset();
 
     }
-
 
 }

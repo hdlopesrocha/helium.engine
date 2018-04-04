@@ -12,27 +12,17 @@ import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.TreeMap;
 
+import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
+
 public class TextureLoader {
 
-    private static Map<String, Integer> loadedTextures = new TreeMap<String, Integer>();
+    private static final Map<String, Integer> loadedTextures = new TreeMap<>();
 
     public int loadTexture(String filename) {
-        Integer res = loadedTextures.get(filename);
-        if (res == null) {
-            res = loadPNGTexture(filename, GL13.GL_TEXTURE0);
-            loadedTextures.put(filename, res);
-        }
+        Integer res = loadedTextures.computeIfAbsent(filename, f -> loadPNGTexture(f, GL_TEXTURE0));
         return res;
     }
 
-
-    /**
-     * Load png texture.
-     *
-     * @param filename    the filename
-     * @param textureUnit the texture unit
-     * @return the int
-     */
     private int loadPNGTexture(String filename, int textureUnit) {
         ByteBuffer buf = null;
         int tWidth = 0;
@@ -86,9 +76,7 @@ public class TextureLoader {
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER,
                 GL11.GL_LINEAR_MIPMAP_LINEAR);
 
-
         return texId;
     }
-
 
 }

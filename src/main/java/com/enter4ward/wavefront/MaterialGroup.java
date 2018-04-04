@@ -7,66 +7,28 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeMap;
 
-/**
- * The Class MaterialGroup.
- */
 class MaterialGroup {
 
-    /**
-     * The Constant POSITIONS_LENGTH.
-     */
     private static final int POSITIONS_LENGTH = 3;
 
-    /**
-     * The Constant NORMALS_LENGTH.
-     */
     private static final int NORMALS_LENGTH = 3;
 
-    /**
-     * The Constant TEXTURES_LENGTH.
-     */
     private static final int TEXTURES_LENGTH = 2;
 
-    /**
-     * The indexs.
-     */
-    private TreeMap<String, Integer> combinations;
+    private final TreeMap<String, Integer> combinations;
 
-    /**
-     * The vv_a.
-     */
-    private ArrayList<String> positions;
+    private final ArrayList<String> positions;
 
-    /**
-     * The vt_a.
-     */
-    private ArrayList<String> textures;
+    private final ArrayList<String> textures;
 
-    /**
-     * The vn_a.
-     */
-    private ArrayList<String> normals;
+    private final ArrayList<String> normals;
 
-    /**
-     * The ii_a.
-     */
-    private ArrayList<String> indices;
+    private final ArrayList<String> indices;
 
-    /**
-     * The material.
-     */
-    private String material;
+    private final String material;
 
-    /**
-     * The ii.
-     */
     private int ii = 0;
 
-    /**
-     * Instantiates a new material group.
-     *
-     * @param mat the mat
-     */
     public MaterialGroup(final String mat) {
         combinations = new TreeMap<>();
         positions = new ArrayList<>();
@@ -76,30 +38,17 @@ class MaterialGroup {
         material = mat;
     }
 
-    /**
-     * Adds the position.
-     *
-     * @param list the list
-     * @param i    the i
-     */
     public void addPosition(final List<String> list, final int i) {
-        positions.add(list.get(i * POSITIONS_LENGTH + 0));
+        positions.add(list.get(i * POSITIONS_LENGTH));
         positions.add(list.get(i * POSITIONS_LENGTH + 1));
         positions.add(list.get(i * POSITIONS_LENGTH + 2));
     }
 
-    /**
-     * Adds the normal.
-     *
-     * @param list the list
-     * @param i    the i
-     */
     public void addNormal(final List<String> list, final int i) {
-        normals.add(list.get(i * NORMALS_LENGTH + 0));
+        normals.add(list.get(i * NORMALS_LENGTH));
         normals.add(list.get(i * NORMALS_LENGTH + 1));
         normals.add(list.get(i * NORMALS_LENGTH + 2));
     }
-
 
     public void addNormal() {
         normals.add("0");
@@ -107,14 +56,8 @@ class MaterialGroup {
         normals.add("0");
     }
 
-    /**
-     * Adds the texture.
-     *
-     * @param list the list
-     * @param i    the i
-     */
     public void addTexture(final List<String> list, final int i) {
-        textures.add(list.get(i * TEXTURES_LENGTH + 0));
+        textures.add(list.get(i * TEXTURES_LENGTH));
         textures.add(list.get(i * TEXTURES_LENGTH + 1));
     }
 
@@ -123,12 +66,6 @@ class MaterialGroup {
         textures.add("0");
     }
 
-    /**
-     * Adds the index.
-     *
-     * @param vpn the vpn
-     * @return the boolean
-     */
     public Boolean addIndex(final String vpn) {
         Integer vert = combinations.get(vpn);
         Boolean added = (vert == null);
@@ -140,16 +77,8 @@ class MaterialGroup {
         return added;
     }
 
-    /**
-     * To json.
-     *
-     * @return the JSON object
-     * the JSON exception
-     */
     public JSONObject toJSON() {
         return new JSONObject() {{
-            ;
-
             put("mm", material);
 
             put("vv", new JSONArray() {{
@@ -177,6 +106,5 @@ class MaterialGroup {
             }});
         }};
     }
-
 
 }

@@ -64,14 +64,14 @@ public class VertexData {
         this.indexData.clear();
     }
 
-    public interface VertexDataHandler {
-        void handle(Vector3f position, Vector3f normal, Vector2f texture);
-    }
-
     public void iterate(VertexDataHandler handler) {
         for (int i = 0; i < positionData.size(); ++i) {
             handler.handle(positionData.get(i), normalData.get(i), textureData.get(i));
         }
+    }
+
+    public interface VertexDataHandler {
+        void handle(Vector3f position, Vector3f normal, Vector2f texture);
     }
 
 }

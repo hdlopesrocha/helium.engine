@@ -2,9 +2,6 @@ package com.enter4ward.math;
 
 import org.joml.Vector3f;
 
-/**
- * The Class Box.
- */
 public class BoundingCube extends IBoundingBox {
 
     private float len;
@@ -15,15 +12,14 @@ public class BoundingCube extends IBoundingBox {
     }
 
     public BoundingCube() {
+
     }
 
     @Override
     public String toString() {
         return "{Min:" + "{" + getMin().x + "," + getMin().y + ","
-                + getMin().z + "}, Len:" + "{" + len+ "}";
+                + getMin().z + "}, Len:" + "{" + len + "}";
     }
-
-
 
     public boolean equals(Object other) {
         if (other instanceof BoundingCube) {
@@ -83,11 +79,11 @@ public class BoundingCube extends IBoundingBox {
         return min.z + len;
     }
 
-    public void setLen(final float len) {
-        this.len = len;
-    }
-
     public float getLen() {
         return len;
+    }
+
+    public void setLen(final float len) {
+        this.len = len;
     }
 }

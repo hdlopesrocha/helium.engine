@@ -7,7 +7,7 @@ import org.joml.Vector3f;
 
 public class BoundingFrustum {
 
-    private Planef[] planes = new Planef[6];
+    private final Planef[] planes = new Planef[6];
 
     public BoundingFrustum() {
         for (int i = 0; i < 6; ++i) {

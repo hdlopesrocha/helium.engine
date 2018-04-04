@@ -1,6 +1,5 @@
 package com.enter4ward.lwjgl;
 
-
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.glfw.GLFWWindowSizeCallback;
@@ -15,15 +14,13 @@ import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
-// TODO: Auto-generated Javadoc
-
 public abstract class Game {
 
     // The window handle
     private long window;
     // Shader variables
     private ShaderProgram program;
-    private KeyboardManager keyboardManager = new KeyboardManager();
+    private final KeyboardManager keyboardManager = new KeyboardManager();
     private int width, height;
 
     public Game() {
@@ -52,7 +49,7 @@ public abstract class Game {
 
     public abstract void draw();
 
-    public void start(int width, int height){
+    public void start(int width, int height) {
         this.width = width;
         this.height = height;
         init("Space3D");
@@ -136,9 +133,9 @@ public abstract class Game {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        glfwSetWindowSizeCallback(window, new GLFWWindowSizeCallback(){
+        glfwSetWindowSizeCallback(window, new GLFWWindowSizeCallback() {
             @Override
-            public void invoke(long window, int width, int height){
+            public void invoke(long window, int width, int height) {
                 Game.this.width = width;
                 Game.this.height = height;
                 Game.this.onWindowResized();
@@ -148,11 +145,9 @@ public abstract class Game {
         });
     }
 
-
     private void loop() {
         long time = getTime();
         long oldTime = time;
-
 
         // Run the rendering loop until the user has attempted to close
         // the window or has pressed the ESCAPE key.

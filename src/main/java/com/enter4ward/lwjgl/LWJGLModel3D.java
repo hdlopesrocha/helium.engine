@@ -6,14 +6,7 @@ import org.joml.Quaternionf;
 
 import java.io.FileNotFoundException;
 
-// TODO: Auto-generated Javadoc
-
-/**
- * The Class Model3D.
- */
 public class LWJGLModel3D extends Model3D {
-
-
 
     public LWJGLModel3D(String filename, float scale, Quaternionf quat, IBufferBuilder builder)
             throws FileNotFoundException {
@@ -28,9 +21,6 @@ public class LWJGLModel3D extends Model3D {
         loadTextures();
     }
 
-    /**
-     * Load textures.
-     */
     public void loadTextures() {
 
         for (final Material m : materials.values()) {
@@ -38,13 +28,6 @@ public class LWJGLModel3D extends Model3D {
         }
     }
 
-    /**
-     * Draw.
-     *
-     * @param obj     the buffer
-     * @param shader  the shader
-     * @param handler the handler
-     */
     public void draw(IObject3D obj, ShaderProgram shader, DrawHandler handler) {
         for (Group g : groups) {
             for (IBufferObject ib : g.getBuffers()) {

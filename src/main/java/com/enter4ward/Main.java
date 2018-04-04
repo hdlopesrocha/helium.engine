@@ -14,7 +14,6 @@ import java.util.Random;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL20.glUseProgram;
 
-
 public class Main extends Game {
 
     //private static final int NUMBER_OF_OBJECTS = 0;
@@ -25,17 +24,15 @@ public class Main extends Game {
     private static final Vector3f TEMP_MAX = new Vector3f();
     private static final int NUMBER_OF_OBJECTS = 1000000;
     private static final Random RANDOM = new Random();
-    /**
-     * The buffer builder.
-     */
-    private static IBufferBuilder bufferBuilder = () -> new BufferObject(true);
+
+    private static final IBufferBuilder bufferBuilder = () -> new BufferObject(true);
     public final int MAP_SIZE = 2048;
     public final float DISTANCE = 32;
     public final float SPEED = 0.5f;
     DrawableSphere sphere;
     LWJGLModel3D boxModel;
     Object3D box;
-    List<Object> hits = new ArrayList<>();
+    final List<Object> hits = new ArrayList<>();
     List<Object> tests = new ArrayList<>();
     boolean hyperCubeMode = false;
     boolean boundingSpheres = false;
@@ -46,15 +43,12 @@ public class Main extends Game {
     float time = 0;
     float cameraMovementVelocity = 0.2f;
     float cameraRotationVelocity = 0.01f;
-    Quaternionf objRotation = new Quaternionf().fromAxisAngleRad(3f, 7f, 11f, (float) Math.PI / 77f);
-    /**
-     * The space.
-     */
+    final Quaternionf objRotation = new Quaternionf().fromAxisAngleRad(3f, 7f, 11f, (float) Math.PI / 77f);
+
     private Space space;
     private DrawableBox cubeModel;
     private LWJGLModel3D skyModel;
     private Object3D sky;
-
 
     public Main() {
 
@@ -133,7 +127,6 @@ public class Main extends Game {
         float t = (float) (RANDOM.nextFloat() * Math.PI);
         float s = (float) (2 * RANDOM.nextFloat() * Math.PI);
 
-
         new Object3D(new Vector3f(
                 sphere.x + (float) (r * Math.sin(t) * Math.cos(s)),
                 sphere.y + (float) (r * Math.sin(t) * Math.sin(s)),
@@ -142,6 +135,7 @@ public class Main extends Game {
             setNode(space.insert(getBoundingSphere(TEMP_BOUNDING_SPHERE), this));
         }};
     }
+
     @Override
     public void update(float deltaTime) {
         time += deltaTime;
@@ -163,7 +157,6 @@ public class Main extends Game {
             }
         });
 
-
         if (getKeyboardManager().isKeyDown(GLFW.GLFW_KEY_LEFT)) {
             camera.rotate(0, 1, 0, -cameraRotationVelocity);
         }
@@ -176,7 +169,6 @@ public class Main extends Game {
         if (getKeyboardManager().isKeyDown(GLFW.GLFW_KEY_DOWN)) {
             camera.rotate(1, 0, 0, cameraRotationVelocity);
         }
-
 
         if (getKeyboardManager().isKeyDown(GLFW.GLFW_KEY_Q)) {
             camera.rotate(0, 0, 1, -cameraRotationVelocity);
@@ -201,7 +193,6 @@ public class Main extends Game {
         if (getKeyboardManager().isKeyDown(GLFW.GLFW_KEY_D)) {
             camera.move(0, 0, -cameraMovementVelocity);
         }
-
 
         if (getKeyboardManager().hasKeyReleased(GLFW.GLFW_KEY_1)) {
             this.boundingSpheres = !this.boundingSpheres;
@@ -247,7 +238,6 @@ public class Main extends Game {
             }
         }
 
-
         if (getKeyboardManager().isKeyDown(GLFW.GLFW_KEY_Y)) {
             for (int i = 0; i < 8; ++i) {
                 insertRandomBoxInsideSphere(new BoundingSphere(camera.getPosition(), 4));
@@ -259,13 +249,12 @@ public class Main extends Game {
             box.setNode(space.insert(box.getBoundingSphere(TEMP_BOUNDING_SPHERE), box));
         }
 
-
         sky.getPosition().set(camera.getPosition());
     }
 
     @Override
     protected void onWindowResized() {
-        camera.calculateProjection(getWidth(),getHeight());
+        camera.calculateProjection(getWidth(), getHeight());
     }
 
     @Override

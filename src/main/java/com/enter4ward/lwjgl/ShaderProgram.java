@@ -5,7 +5,6 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.opengl.ARBFragmentShader;
 import org.lwjgl.opengl.ARBVertexShader;
-import org.lwjgl.opengl.GL11;
 
 import java.io.InputStream;
 import java.util.Scanner;
@@ -13,14 +12,11 @@ import java.util.Scanner;
 import static org.lwjgl.opengl.ARBShaderObjects.*;
 import static org.lwjgl.opengl.GL11.*;
 
-// TODO: Auto-generated Javadoc
-
-/**
- * The Class ShaderProgram.
- */
 public class ShaderProgram {
 
-
+    private static final Matrix4f TEMP_VIEW_PROJECTION_MATRIX = new Matrix4f();
+    private static final Matrix4f TEMP_MODEL_MATRIX = new Matrix4f();
+    private static final float[] TEMP_MATRIX_BUFFER = new float[16];
     public int mPositionHandle;
     public int mNormalHandle;
     public int mTextureCoordinateHandle;
@@ -35,12 +31,11 @@ public class ShaderProgram {
     private int lightEnabledLocation = 0;
     private int ambientColorLocation = 0;
     private int diffuseColorLocation = 0;
-    private int[] lightPositionLocation = new int[10];
-    private int[] lightSpecularColorLocation = new int[10];
-    private Vector3f[] lightPosition = new Vector3f[10];
-    private Vector3f[] lightSpecularColor = new Vector3f[10];
-    private int program = 0;
-
+    private final int[] lightPositionLocation = new int[10];
+    private final int[] lightSpecularColorLocation = new int[10];
+    private final Vector3f[] lightPosition = new Vector3f[10];
+    private final Vector3f[] lightSpecularColor = new Vector3f[10];
+    private int program;
 
     public ShaderProgram(String vertexShader, String fragShader)
             throws Exception {
@@ -116,16 +111,11 @@ public class ShaderProgram {
         glUseProgramObjectARB(program);
     }
 
-    private static final Matrix4f TEMP_VIEW_PROJECTION_MATRIX = new Matrix4f();
-    private static final Matrix4f TEMP_MODEL_MATRIX = new Matrix4f();
-    private static final float[] TEMP_MATRIX_BUFFER = new float[16];
-
     public void update(Camera camera) {
         // Upload matrices to the uniform variables
         Matrix4f viewProjectionMatrix = camera.getViewProjectionMatrix(TEMP_VIEW_PROJECTION_MATRIX);
         float[] mat = viewProjectionMatrix.get(TEMP_MATRIX_BUFFER);
         glUniformMatrix4fvARB(viewProjectionMatrixLocation, false, mat);
-
 
         final Vector3f cameraPosition = camera.getPosition();
         glUniform3fARB(cameraPositionLocation, cameraPosition.x, cameraPosition.y, cameraPosition.z);
@@ -233,10 +223,7 @@ public class ShaderProgram {
                 try {
                     reader.close();
                 } catch (Exception exc) {
-                    if (innerExc == null)
-                        innerExc = exc;
-                    else
-                        exc.printStackTrace();
+                    innerExc = exc;
                 }
             }
 

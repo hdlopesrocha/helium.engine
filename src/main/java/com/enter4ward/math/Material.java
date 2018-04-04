@@ -11,7 +11,7 @@ public class Material {
     public Float sharpness;
     public Float Ni;
     public int texture = 0;
-    public String name;
+    public final String name;
     public String filename;
 
     public Material(String n) {

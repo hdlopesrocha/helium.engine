@@ -15,7 +15,8 @@ public class Camera extends BoundingFrustum {
 
     private final Matrix4f projectionMatrix;
 
-    private float far, near;
+    private final float far;
+    private final float near;
 
     public Camera(int w, int h, float near, float far) {
         position = new Vector3f();
@@ -26,9 +27,8 @@ public class Camera extends BoundingFrustum {
         calculateProjection(w, h);
     }
 
-    // OK
     private Matrix4f getViewMatrix(Matrix4f result) {
-        result.rotation(rotation).translate(-position.x,-position.y,-position.z);
+        result.rotation(rotation).translate(-position.x, -position.y, -position.z);
         return result;
     }
 
@@ -47,13 +47,11 @@ public class Camera extends BoundingFrustum {
         return rotation;
     }
 
-    // OK
     public void lookAt(Vector3f pos, Vector3f lookAt, Vector3f up) {
         position.set(pos);
         rotation.setFromNormalized(TEMP_LOOK_MATRIX.lookAt(pos, lookAt, up));
     }
 
-    // OK
     public void calculateProjection(int w, int h) {
         projectionMatrix.identity().perspective((float) Math.toRadians(45f), (float) w / (float) h, near, far);
     }
@@ -67,7 +65,7 @@ public class Camera extends BoundingFrustum {
     }
 
     public void move(float front, float down, float right) {
-        TEMP_MOVE_MATRIX.translationRotate(right, down, front,rotation).translate(position.mul(-1)).invert();
+        TEMP_MOVE_MATRIX.translationRotate(right, down, front, rotation).translate(position.mul(-1)).invert();
         TEMP_MOVE_MATRIX.getTranslation(position);
     }
 

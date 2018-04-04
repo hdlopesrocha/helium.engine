@@ -14,9 +14,8 @@ public class Space {
             13
     };
 
-
     private static final BoundingCube TEMP_BOUNDING_BOX = new BoundingCube(new Vector3f(), 0f);
-    private float minSize;
+    private final float minSize;
     private Node root;
 
     public Space(float minSize) {
@@ -73,10 +72,6 @@ public class Space {
         return null;
     }
 
-
-    /**
-     * The Class Node.
-     */
     public class Node extends BoundingCube {
 
         private ArrayList<Object> container;
@@ -117,7 +112,6 @@ public class Space {
             }
             this.children.set(i, node);
         }
-
 
         private int clamp(int val, int min, int max) {
             return val < min ? min : val > max ? max : val;
@@ -160,11 +154,6 @@ public class Space {
         public int containerSize() {
             return container == null ? 0 : container.size();
         }
-
-        public String toString() {
-            return super.toString();
-        }
-
 
         private Node buildIfContains(final int i, BoundingSphere sph) {
             final float len = getLen() * 0.5f;
@@ -222,7 +211,7 @@ public class Space {
 
             float sx = ((index / 9) % 3) * getLen() * 0.5f;
             float sy = ((index / 3) % 3) * getLen() * 0.5f;
-            float sz = ((index / 1) % 3) * getLen() * 0.5f;
+            float sz = ((index) % 3) * getLen() * 0.5f;
             Vector3f newMin = index == 0 ? getMin() : new Vector3f(getMin()).sub(sx, sy, sz);
             return new Node(this, index, newMin, len);
         }
@@ -405,6 +394,5 @@ public class Space {
             return node;
         }
     }
-
 
 }

@@ -2,9 +2,6 @@ package com.enter4ward.math;
 
 import org.joml.Vector3f;
 
-/**
- * The Class Box.
- */
 public class BoundingBox extends IBoundingBox {
 
     private Vector3f len;
@@ -37,14 +34,12 @@ public class BoundingBox extends IBoundingBox {
         return this;
     }
 
-
     public BoundingBox createFromSphere(BoundingSphere sphere) {
         float r = sphere.r;
         min.set(sphere).sub(r, r, r);
         len.set(r * 2);
         return this;
     }
-
 
     public BoundingBox merge(BoundingBox box) {
         float minX = Math.min(min.x, box.min.x);

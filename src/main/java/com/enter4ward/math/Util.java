@@ -14,5 +14,4 @@ public class Util {
         return vec;
     }
 
-
 }

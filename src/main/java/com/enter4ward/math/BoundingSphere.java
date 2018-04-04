@@ -2,9 +2,6 @@ package com.enter4ward.math;
 
 import org.joml.Vector3f;
 
-/**
- * The Class Box.
- */
 public class BoundingSphere extends Vector3f {
 
     public float r;

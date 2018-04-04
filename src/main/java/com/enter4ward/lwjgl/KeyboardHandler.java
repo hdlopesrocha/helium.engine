@@ -6,7 +6,7 @@ import static org.lwjgl.glfw.GLFW.GLFW_RELEASE;
 
 public class KeyboardHandler extends GLFWKeyCallback {
 
-    public static boolean[] keys = new boolean[65536];
+    public static final boolean[] keys = new boolean[65536];
 
     // boolean method that returns true if a given key
     // is pressed.
@@ -16,10 +16,10 @@ public class KeyboardHandler extends GLFWKeyCallback {
 
     // The GLFWKeyCallback class is an abstract method that
     // can't be instantiated by itself and must instead be extended
-    //
+
     @Override
     public void invoke(long window, int key, int scancode, int action, int mods) {
-        // TODO Auto-generated method stub
+
         keys[key] = action != GLFW_RELEASE;
     }
 

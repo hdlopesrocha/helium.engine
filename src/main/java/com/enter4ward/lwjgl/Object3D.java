@@ -13,7 +13,6 @@ public class Object3D extends IObject3D {
         super(position, model);
     }
 
-
     public void draw(ShaderProgram program, BoundingFrustum frustum) {
         final Matrix4f matrix = getModelMatrix(TEMP_MODEL_MATRIX);
         final LWJGLModel3D model = (LWJGLModel3D) getModel();

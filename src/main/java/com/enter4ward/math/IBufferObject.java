@@ -1,6 +1,7 @@
 package com.enter4ward.math;
 
 import org.joml.Vector3f;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
@@ -15,13 +16,12 @@ public abstract class IBufferObject extends BoundingSphere {
     protected int indexCount;
     protected Material material;
 
-    private List<Triangle> triangles = new ArrayList<>();
-    private boolean explodeTriangles;
+    private final List<Triangle> triangles = new ArrayList<>();
+    private final boolean explodeTriangles;
 
     public IBufferObject(boolean explodeTriangles) {
         this.explodeTriangles = explodeTriangles;
     }
-
 
     public Material getMaterial() {
         return material;
@@ -82,10 +82,12 @@ public abstract class IBufferObject extends BoundingSphere {
         vertexData.clear();
 
         /* BUILD SPHERE */
-        x = (min.x + max.x) * .5f;
-        y = (min.y + max.y) * .5f;
-        z = (min.z + max.z)  * .5f;
-        r = min.distance(max)  * .5f;
+        if (min != null && max != null) {
+            x = (min.x + max.x) * .5f;
+            y = (min.y + max.y) * .5f;
+            z = (min.z + max.z) * .5f;
+            r = min.distance(max) * .5f;
+        }
     }
 
     public Iterable<Triangle> getTriangles() {
