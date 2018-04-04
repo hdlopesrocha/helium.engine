@@ -16,12 +16,15 @@ public class Object3D extends IObject3D {
     public void draw(ShaderProgram program, BoundingFrustum frustum) {
         final Matrix4f matrix = getModelMatrix(TEMP_MODEL_MATRIX);
         final LWJGLModel3D model = (LWJGLModel3D) getModel();
-        for (final Group g : model.getGroups()) {
-            for (final IBufferObject ib : g.getBuffers()) {
-                BufferObject b = (BufferObject) ib;
+
+        int groupCount = model.getGroups().size();
+        for (int i = 0; i < groupCount; ++i) {
+            Group g = model.getGroups().get(i);
+            int bufferCount = g.getBuffers().size();
+            for (int j = 0; j < bufferCount; ++j) {
+                BufferObject b =  (BufferObject) g.getBuffers().get(j);
                 final BoundingSphere sph = TEMP_BOUNDING_SPHERE.set(b);
                 sph.add(matrix.getTranslation(TEMP_VECTOR3F));
-
                 if (frustum.contains(sph) != ContainmentType.Disjoint) {
                     b.bind(program);
                     program.setModelMatrix(matrix);
@@ -34,9 +37,12 @@ public class Object3D extends IObject3D {
     public void drawBoundingSpheres(ShaderProgram program, BoundingFrustum frustum) {
         final Matrix4f matrix = getModelMatrix(TEMP_MODEL_MATRIX);
         final LWJGLModel3D model = (LWJGLModel3D) getModel();
-        for (final Group g : model.getGroups()) {
-            for (final IBufferObject ib : g.getBuffers()) {
-                BufferObject b = (BufferObject) ib;
+        int groupCount = model.getGroups().size();
+        for (int i = 0; i < groupCount; ++i) {
+            Group g = model.getGroups().get(i);
+            int bufferCount = g.getBuffers().size();
+            for (int j = 0; j < bufferCount; ++j) {
+                BufferObject b =  (BufferObject) g.getBuffers().get(j);
                 final BoundingSphere sph = TEMP_BOUNDING_SPHERE.set(b);
                 sph.add(matrix.getTranslation(TEMP_VECTOR3F));
 

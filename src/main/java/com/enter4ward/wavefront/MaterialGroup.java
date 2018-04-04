@@ -15,26 +15,21 @@ class MaterialGroup {
 
     private static final int TEXTURES_LENGTH = 2;
 
-    private final TreeMap<String, Integer> combinations;
+    private final TreeMap<String, Integer> combinations = new TreeMap<>();
 
-    private final ArrayList<String> positions;
+    private final ArrayList<String> positions = new ArrayList<>();
 
-    private final ArrayList<String> textures;
+    private final ArrayList<String> textures = new ArrayList<>();
 
-    private final ArrayList<String> normals;
+    private final ArrayList<String> normals = new ArrayList<>();
 
-    private final ArrayList<String> indices;
+    private final ArrayList<String> indices = new ArrayList<>();
 
     private final String material;
 
     private int ii = 0;
 
     public MaterialGroup(final String mat) {
-        combinations = new TreeMap<>();
-        positions = new ArrayList<>();
-        textures = new ArrayList<>();
-        normals = new ArrayList<>();
-        indices = new ArrayList<>();
         material = mat;
     }
 

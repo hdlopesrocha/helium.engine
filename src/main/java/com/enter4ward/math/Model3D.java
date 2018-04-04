@@ -39,7 +39,7 @@ public class Model3D implements IModel3D {
             // loop through the JsonTokens
             while (jsonParser.nextToken() != JsonToken.END_OBJECT) {
                 String name = jsonParser.getCurrentName();
-                switch (name) {
+                switch (name != null ? name : "") {
                     case "materials":
                         jsonParser.nextToken();
                         while (jsonParser.nextToken() != JsonToken.END_OBJECT) {
@@ -268,7 +268,7 @@ public class Model3D implements IModel3D {
         return sphere;
     }
 
-    public Iterable<Group> getGroups() {
+    public List<Group> getGroups() {
         return groups;
     }
 

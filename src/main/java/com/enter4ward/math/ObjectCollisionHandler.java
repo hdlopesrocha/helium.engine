@@ -2,5 +2,5 @@ package com.enter4ward.math;
 
 public interface ObjectCollisionHandler {
 
-    void onObjectCollision(Object obj);
+    void onObjectCollision(BoundingSphere sphere, Object obj);
 }

@@ -57,16 +57,20 @@ public abstract class IObject3D {
     public IntersectionInfo closestTriangle(final Ray ray) {
         IntersectionInfo info = null;
         final Model3D model = (Model3D) getModel();
-
-        for (Group g : model.getGroups()) {
-            for (IBufferObject b : g.getBuffers()) {
-
-                for (Triangle t : b.getTriangles()) {
-                    final Float i = ray.intersects(t);
-                    if (i != null && (info == null || i < info.distance)) {
+        int groupCount = model.getGroups().size();
+        for (int i = 0; i < groupCount; ++i) {
+            Group g = model.getGroups().get(i);
+            int bufferCount = g.getBuffers().size();
+            for (int j = 0; j < bufferCount; ++j) {
+                IBufferObject b = g.getBuffers().get(j);
+                int triangleCount = b.getTriangles().size();
+                for (int k = 0; k < triangleCount; ++k) {
+                    Triangle t = b.getTriangles().get(k);
+                    final Float d = ray.intersects(t);
+                    if (d != null && (info == null || i < info.distance)) {
                         if (info == null)
                             info = new IntersectionInfo();
-                        info.distance = i;
+                        info.distance = d;
                         info.triangle = t;
                     }
                 }

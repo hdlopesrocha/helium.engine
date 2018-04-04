@@ -90,7 +90,7 @@ public abstract class IBufferObject extends BoundingSphere {
         }
     }
 
-    public Iterable<Triangle> getTriangles() {
+    public List<Triangle> getTriangles() {
         return triangles;
     }
 

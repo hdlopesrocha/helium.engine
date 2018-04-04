@@ -78,9 +78,8 @@ public class BoundingFrustum {
 
     public void update(Matrix4f viewProjectionMatrix) {
         // Pre-calculate the different planes needed
-
         for (int i = 0; i < 6; ++i) {
-            planes[i] = viewProjectionMatrix.frustumPlane(i, new Planef());
+            planes[i] = viewProjectionMatrix.frustumPlane(i, planes[i]);
         }
     }
 

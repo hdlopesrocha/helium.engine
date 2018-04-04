@@ -5,6 +5,7 @@ import org.joml.Vector3f;
 public class BoundingBox extends IBoundingBox {
 
     private Vector3f len;
+    private Vector3f min;
 
     public BoundingBox(Vector3f min, Vector3f len) {
         this.min = min;
@@ -16,8 +17,8 @@ public class BoundingBox extends IBoundingBox {
 
     @Override
     public String toString() {
-        return "{Min:" + "{" + getMin().x + "," + getMin().y + ","
-                + getMin().z + "}, Len:" + "{" + len.toString() + "}";
+        return "{Min:" + "{" + getMinX() + "," + getMinY() + ","
+                + getMinZ() + "}, Len:" + "{" + len.toString() + "}";
     }
 
     public BoundingBox createFromPoints(Vector3f[] points) {
@@ -116,4 +117,21 @@ public class BoundingBox extends IBoundingBox {
     public float getMaxZ() {
         return min.z + len.z;
     }
+
+    @Override
+    public float getMinX() {
+        return min.x;
+    }
+
+    @Override
+    public float getMinY() {
+        return min.y;
+    }
+
+    @Override
+    public float getMinZ() {
+        return min.z;
+    }
+
+
 }

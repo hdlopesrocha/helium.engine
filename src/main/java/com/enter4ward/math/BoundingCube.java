@@ -5,11 +5,7 @@ import org.joml.Vector3f;
 public class BoundingCube extends IBoundingBox {
 
     private float len;
-
-    public BoundingCube(Vector3f min, float len) {
-        this.min = min;
-        this.len = len;
-    }
+    private float minX, minY, minZ;
 
     public BoundingCube() {
 
@@ -17,17 +13,10 @@ public class BoundingCube extends IBoundingBox {
 
     @Override
     public String toString() {
-        return "{Min:" + "{" + getMin().x + "," + getMin().y + ","
-                + getMin().z + "}, Len:" + "{" + len + "}";
+        return "{Min:" + "{" + getMinX() + "," + getMinY() + ","
+                + getMinZ() + "}, Len:" + "{" + len + "}";
     }
-
-    public boolean equals(Object other) {
-        if (other instanceof BoundingCube) {
-            return (min.equals(((BoundingCube) other).min)) && (len == (((BoundingCube) other).len));
-        }
-        return false;
-    }
-
+    
     @Override
     public float getLengthX() {
         return len;
@@ -51,36 +40,63 @@ public class BoundingCube extends IBoundingBox {
 
     @Override
     public float getCenterX() {
-        return min.x + len * 0.5f;
+        return minX + len * 0.5f;
     }
 
     @Override
     public float getCenterY() {
-        return min.y + len * 0.5f;
+        return minY + len * 0.5f;
     }
 
     @Override
     public float getCenterZ() {
-        return min.z + len * 0.5f;
+        return minZ + len * 0.5f;
     }
 
     @Override
     public float getMaxX() {
-        return min.x + len;
+        return minX + len;
     }
 
     @Override
     public float getMaxY() {
-        return min.y + len;
+        return minY + len;
     }
 
     @Override
     public float getMaxZ() {
-        return min.z + len;
+        return minZ + len;
+    }
+
+    @Override
+    public float getMinX() {
+        return minX;
+    }
+
+    @Override
+    public float getMinY() {
+        return minY;
+    }
+
+    @Override
+    public float getMinZ() {
+        return minZ;
     }
 
     public float getLen() {
         return len;
+    }
+
+    public void setMin(final Vector3f vec) {
+        this.minX = vec.x;
+        this.minY = vec.y;
+        this.minZ = vec.z;
+    }
+
+    public void setMin(float x, float y, float z) {
+        this.minX = x;
+        this.minY = y;
+        this.minZ = z;
     }
 
     public void setLen(final float len) {

@@ -3,10 +3,12 @@ package com.enter4ward.math;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class Space {
 
     private static final int NUMBER_NODES = 27;
+    private static final int CACHE_SIZE = 1024;
     private static final Integer[] OPTIMAL_ORDER = new Integer[]{
             0, 2, 6, 8, 18, 20, 24, 26,
             4, 22, 10, 12, 14, 16,
@@ -14,18 +16,33 @@ public class Space {
             13
     };
 
-    private static final BoundingCube TEMP_BOUNDING_BOX = new BoundingCube(new Vector3f(), 0f);
+    private final List<Node> NODE_CACHE = new ArrayList<>(CACHE_SIZE);
+    private final BoundingCube TEMP_BOUNDING_BOX = new BoundingCube();
+
     private final float minSize;
     private Node root;
 
     public Space(float minSize) {
         this.minSize = minSize;
-        root = new Node();
+        clear();
     }
 
     public void clear() {
-        root = new Node();
+        root = createNode().set(null, 0, 0, 0, minSize);
+    }
 
+    public Node createNode() {
+        if (NODE_CACHE.size() > 0) {
+            return NODE_CACHE.remove(0);
+        } else {
+            return new Node();
+        }
+    }
+
+    public void deleteNode(Node node) {
+        if (NODE_CACHE.size() < CACHE_SIZE) {
+            NODE_CACHE.add(node);
+        }
     }
 
     public Node insert(final BoundingSphere sph, final Object obj) {
@@ -75,26 +92,37 @@ public class Space {
     public class Node extends BoundingCube {
 
         private ArrayList<Object> container;
-
         private Node parent;
-
         private ArrayList<Node> children;
 
         public Node() {
-            super(new Vector3f(-minSize * 0.5f), minSize * 0.5f);
-            this.parent = null;
+
         }
 
-        private Node(Node parent, Vector3f min, float len) {
-            super(min, len);
+        private Node set(Node parent, float minX, float minY, float minZ, float len) {
             this.parent = parent;
-
+            clearLists();
+            setMin(minX, minY, minZ);
+            setLen(len);
+            return this;
         }
 
-        private Node(Node node, int i, Vector3f min, float len) {
-            super(min, len);
+        private Node set(Node node, float minX, float minY, float minZ, float len, int i) {
             node.parent = this;
+            clearLists();
+            setMin(minX, minY, minZ);
+            setLen(len);
             setChild(i, node);
+            return this;
+        }
+
+        private void clearLists() {
+            if (children != null) {
+                children.clear();
+            }
+            if (container != null) {
+                container.clear();
+            }
         }
 
         private void setChild(int i, Node node) {
@@ -138,9 +166,6 @@ public class Space {
         private void containerRemove(final Object obj) {
             if (container != null) {
                 container.remove(obj);
-                if (container.size() == 0) {
-                    container = null;
-                }
             }
         }
 
@@ -158,19 +183,14 @@ public class Space {
         private Node buildIfContains(final int i, BoundingSphere sph) {
             final float len = getLen() * 0.5f;
 
-            final int px = (i / 9) % 3;
-            final int py = (i / 3) % 3;
-            final int pz = (i) % 3;
-            Vector3f newMin = i == 0 ? getMin() : new Vector3f(getMin()).add(
-                    len * px * 0.5f,
-                    len * py * 0.5f,
-                    len * pz * 0.5f
-            );
+            final float px = getMinX() + len * ((i / 9) % 3) * 0.5f;
+            final float py = getMinY() + len * ((i / 3) % 3) * 0.5f;
+            final float pz = getMinZ() + len * ((i) % 3) * 0.5f;
 
-            TEMP_BOUNDING_BOX.getMin().set(newMin);
+            TEMP_BOUNDING_BOX.setMin(px, py, pz);
             TEMP_BOUNDING_BOX.setLen(len);
             if (TEMP_BOUNDING_BOX.contains(sph) == ContainmentType.Contains) {
-                return new Node(this, newMin, len);
+                return createNode().set(this, px, py, pz, len);
             } else {
                 return null;
             }
@@ -209,11 +229,10 @@ public class Space {
             final int index = (NUMBER_NODES - 1) - getNodeIndex(position);
             final float len = getLen() * 2.0f;
 
-            float sx = ((index / 9) % 3) * getLen() * 0.5f;
-            float sy = ((index / 3) % 3) * getLen() * 0.5f;
-            float sz = ((index) % 3) * getLen() * 0.5f;
-            Vector3f newMin = index == 0 ? getMin() : new Vector3f(getMin()).sub(sx, sy, sz);
-            return new Node(this, index, newMin, len);
+            float sx = getMinX() - ((index / 9) % 3) * getLen() * 0.5f;
+            float sy = getMinY() - ((index / 3) % 3) * getLen() * 0.5f;
+            float sz = getMinZ() - ((index) % 3) * getLen() * 0.5f;
+            return createNode().set(this, sx, sy, sz, len, index);
         }
 
         private boolean canSplit() {
@@ -225,7 +244,9 @@ public class Space {
 
             handler.onObjectVisible(this);
             if (container != null) {
-                for (Object obj : container) {
+                int containerSize = container.size();
+                for (int i = 0; i < containerSize; ++i) {
+                    Object obj = container.get(i);
                     handler.onObjectVisible(obj);
                 }
             }
@@ -259,6 +280,8 @@ public class Space {
                 for (int i = 0; i < childrenCount; ++i) {
                     Node child = getChild(i);
                     if (child != null && child.isEmpty()) {
+                        deleteNode(child);
+                        child.clearChildren();
                         setChild(i, null);
                     }
                 }
@@ -280,8 +303,8 @@ public class Space {
 
         private Node expand(final BoundingSphere obj) {
             Node node = this;
+            node.clearChildren();
             while (!node.containsSphere(obj)) {
-                node.clearChildren();
                 node = node.expandAux(obj);
                 node.clearChildren();
             }
@@ -291,8 +314,10 @@ public class Space {
         private void handleObjectCollisions(final BoundingSphere sph,
                                             final ObjectCollisionHandler handler) {
             if (container != null) {
-                for (Object obj : container) {
-                    handler.onObjectCollision(obj);
+                int containerSize = container.size();
+                for (int i = 0; i < containerSize; ++i) {
+                    Object obj = container.get(i);
+                    handler.onObjectCollision(sph, obj);
                 }
             }
             int childrenCount = getChildrenCount();
@@ -329,7 +354,9 @@ public class Space {
             final float len = ray.getDirection().length();
             IntersectionInfo result = null;
             if (container != null) {
-                for (Object obj : container) {
+                int containerSize = container.size();
+                for (int i = 0; i < containerSize; ++i) {
+                    Object obj = container.get(i);
                     IntersectionInfo r = handler.onObjectCollision(space, ray, obj);
                     if (r != null && (result == null || r.distance < result.distance)) {
                         result = r;
@@ -385,6 +412,7 @@ public class Space {
                     }
                 }
                 if (candidate != null) {
+                    deleteNode(node);
                     node = candidate;
                 } else {
                     break;

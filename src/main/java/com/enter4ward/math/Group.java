@@ -19,7 +19,7 @@ public class Group extends BoundingSphere {
         subGroups.add(buffer);
     }
 
-    public Iterable<IBufferObject> getBuffers() {
+    public List<IBufferObject> getBuffers() {
         return subGroups;
     }
 

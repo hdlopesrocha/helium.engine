@@ -6,18 +6,18 @@ import org.joml.Vector3f;
 
 public abstract class IBoundingBox {
 
-    protected Vector3f min;
+
 
     public ContainmentType contains(final Vector3f point) {
 
-        if (point.x < getMin().x || point.x > getMaxX()
-                || point.y < getMin().y || point.y > getMaxY()
-                || point.z < getMin().z || point.z > getMaxZ()) {
+        if (point.x < getMinX() || point.x > getMaxX()
+                || point.y < getMinY() || point.y > getMaxY()
+                || point.z < getMinZ() || point.z > getMaxZ()) {
             return ContainmentType.Disjoint;
         }// or if point is on box because coordonate of point is lesser or equal
-        else if (point.x == getMin().x || point.x == getMaxX()
-                || point.y == getMin().y || point.y == getMaxY()
-                || point.z == getMin().z || point.z == getMaxZ())
+        else if (point.x == getMinX() || point.x == getMaxX()
+                || point.y == getMinY() || point.y == getMaxY()
+                || point.z == getMinZ() || point.z == getMaxZ())
             return ContainmentType.Intersects;
         else
             return ContainmentType.Contains;
@@ -40,18 +40,18 @@ public abstract class IBoundingBox {
     public ContainmentType contains(BoundingBox box) {
         // test if all corner is in the same side of a face by just checking min
         // and max
-        if (box.getMaxX() < getMin().x || box.getMin().x > getMaxX()
-                || box.getMaxY() < getMin().y
-                || box.getMin().y > getMaxY()
-                || box.getMaxZ() < getMin().z
-                || box.getMin().z > getMaxZ())
+        if (box.getMaxX() < getMinX() || box.getMinX() > getMaxX()
+                || box.getMaxY() < getMinY()
+                || box.getMinY() > getMaxY()
+                || box.getMaxZ() < getMinZ()
+                || box.getMinZ() > getMaxZ())
             return ContainmentType.Disjoint;
 
-        if (box.getMin().x >= getMin().x
+        if (box.getMinX() >= getMinX()
                 && box.getMaxX() <= getMaxX()
-                && box.getMin().y >= getMin().y
+                && box.getMinY() >= getMinY()
                 && box.getMaxY() <= getMaxY()
-                && box.getMin().z >= getMin().z
+                && box.getMinZ() >= getMinZ()
                 && box.getMaxZ() <= getMaxZ())
             return ContainmentType.Contains;
 
@@ -64,12 +64,12 @@ public abstract class IBoundingBox {
         final float sz = sphere.z;
         final float sr = sphere.r;
 
-        if (sx - getMin().x >= sr && sy - getMin().y >= sr
-                && sz - getMin().z >= sr && getMaxX() - sx >= sr
+        if (sx - getMinX() >= sr && sy - getMinY() >= sr
+                && sz - getMinZ() >= sr && getMaxX() - sx >= sr
                 && getMaxY() - sy >= sr && getMaxZ() - sz >= sr)
             return ContainmentType.Contains;
         double dmin = 0;
-        double e = sx - getMin().x;
+        double e = sx - getMinX();
         if (e < 0) {
             if (e < -sr) {
                 return ContainmentType.Disjoint;
@@ -84,7 +84,7 @@ public abstract class IBoundingBox {
                 dmin += e * e;
             }
         }
-        e = sy - getMin().y;
+        e = sy - getMinY();
         if (e < 0) {
             if (e < -sr) {
                 return ContainmentType.Disjoint;
@@ -99,7 +99,7 @@ public abstract class IBoundingBox {
                 dmin += e * e;
             }
         }
-        e = sz - getMin().z;
+        e = sz - getMinZ();
         if (e < 0) {
             if (e < -sr) {
                 return ContainmentType.Disjoint;
@@ -125,9 +125,9 @@ public abstract class IBoundingBox {
         final float sz = sphere.z;
         final float sr = sphere.r;
 
-        return (getMin().x <= sx - sr &&
-                getMin().y <= sy - sr &&
-                getMin().z <= sz - sr &&
+        return (getMinX() <= sx - sr &&
+                getMinY() <= sy - sr &&
+                getMinZ() <= sz - sr &&
                 getMaxX() >= sx + sr &&
                 getMaxY() >= sy + sr &&
                 getMaxZ() >= sz + sr);
@@ -149,51 +149,25 @@ public abstract class IBoundingBox {
     }
 
     public boolean intersects(BoundingBox box) {
-        if ((getMaxX() >= box.getMin().x)
-                && (getMin().x <= box.getMaxX())) {
-            return !((getMaxY() < box.getMin().y) || (getMin().y > box
+        if ((getMaxX() >= box.getMinX())
+                && (getMinX() <= box.getMaxX())) {
+            return !((getMaxY() < box.getMinY()) || (getMinY() > box
                     .getMaxY()))
-                    && (getMaxZ() >= box.getMin().z)
-                    && (getMin().z <= box.getMaxZ());
+                    && (getMaxZ() >= box.getMinZ())
+                    && (getMinZ() <= box.getMaxZ());
         }
         return false;
     }
-
-    public float getMinX() {
-        return getMin().x;
-    }
-
-    public void setMinX(float min) {
-        this.getMin().x = min;
-    }
-
-    public float getMinY() {
-        return getMin().y;
-    }
-
-    public void setMinY(float min) {
-        this.getMin().y = min;
-    }
-
-    public float getMinZ() {
-        return getMin().z;
-    }
-
-    public void setMinZ(float min) {
-        this.getMin().z = min;
-    }
-
+    
     public abstract float getMaxX();
 
     public abstract float getMaxY();
 
     public abstract float getMaxZ();
 
-    public Vector3f getMin() {
-        return min;
-    }
+    public abstract float getMinX();
 
-    public void setMin(Vector3f min) {
-        this.min = min;
-    }
+    public abstract float getMinY();
+
+    public abstract float getMinZ();
 }

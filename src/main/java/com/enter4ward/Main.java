@@ -6,7 +6,6 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 
-import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -18,11 +17,12 @@ public class Main extends Game {
 
     //private static final int NUMBER_OF_OBJECTS = 0;
     //private static final int NUMBER_OF_OBJECTS = 500000;
+    private static final int NUMBER_OF_OBJECTS = 1000000;
+
     private static final BoundingSphere TEMP_BOUNDING_SPHERE = new BoundingSphere();
     private static final BoundingSphere TEMP_BOUNDING_SPHERE_2 = new BoundingSphere();
     private static final Vector3f TEMP_MIN = new Vector3f();
     private static final Vector3f TEMP_MAX = new Vector3f();
-    private static final int NUMBER_OF_OBJECTS = 1000000;
     private static final Random RANDOM = new Random();
 
     private static final IBufferBuilder bufferBuilder = () -> new BufferObject(true);
@@ -33,7 +33,7 @@ public class Main extends Game {
     LWJGLModel3D boxModel;
     Object3D box;
     final List<Object> hits = new ArrayList<>();
-    List<Object> tests = new ArrayList<>();
+    final List<Object> tests = new ArrayList<>();
     boolean hyperCubeMode = false;
     boolean boundingSpheres = false;
     boolean boundingBoxes = true;
@@ -65,19 +65,12 @@ public class Main extends Game {
         space = new Space(16);
         cubeModel = new DrawableBox();
 
-        try {
-            boxModel = new LWJGLModel3D("box.json", 1f, bufferBuilder);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
+        boxModel = new LWJGLModel3D("box.json", 1f, bufferBuilder);
 
         sphere = new DrawableSphere(true, false);
-        try {
-            skyModel = new LWJGLModel3D("sphere.json", 10f, bufferBuilder);
-            sky = new Object3D(new Vector3f(1, 1, 1), skyModel);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
+        skyModel = new LWJGLModel3D("sphere.json", 10f, bufferBuilder);
+        sky = new Object3D(new Vector3f(1, 1, 1), skyModel);
+
         box = new Object3D(new Vector3f(0, 0, 0), boxModel);
         box.setNode(space.insert(box.getBoundingSphere(TEMP_BOUNDING_SPHERE), box));
 
@@ -143,19 +136,10 @@ public class Main extends Game {
 
         box.getPosition().set(DISTANCE * (float) Math.sin(SPEED * time), 0f, DISTANCE * (float) Math.cos(SPEED * time));
         box.setNode(space.update(box.getBoundingSphere(TEMP_BOUNDING_SPHERE), box.getNode(), box));
-        tests = new ArrayList<>();
         hits.clear();
         tests.clear();
         BoundingSphere boxSphere = box.getBoundingSphere(TEMP_BOUNDING_SPHERE);
-        space.handleObjectCollisions(boxSphere, obj -> {
-            Object3D o3d = (Object3D) obj;
-
-            if (box != o3d && boxSphere.intersects(o3d.getBoundingSphere(TEMP_BOUNDING_SPHERE_2))) {
-                hits.add(o3d);
-            } else {
-                tests.add(o3d);
-            }
-        });
+        space.handleObjectCollisions(boxSphere, collisionHandler);
 
         if (getKeyboardManager().isKeyDown(GLFW.GLFW_KEY_LEFT)) {
             camera.rotate(0, 1, 0, -cameraRotationVelocity);
@@ -274,77 +258,93 @@ public class Main extends Game {
         sky.draw(getProgram(), camera);
 
         // DRAW OBJECTS
-        space.handleVisibleObjects(camera, obj -> {
-            getProgram().reset();
-
-            if (obj instanceof Space.Node && boundingBoxes) {
-                Space.Node node = (Space.Node) obj;
-                if (node.containerSize() > 0 && node.contains(box)) {
-                    getProgram().setAmbientColor(0f, 1f, 0f);
-                    getProgram().setMaterialAlpha(1f);
-                    getProgram().setOpaque(true);
-
-                    TEMP_MIN.set(node.getMinX(), node.getMinY(), node.getMinZ());
-                    TEMP_MAX.set(node.getMaxX(), node.getMaxY(), node.getMaxZ());
-                    glBindTexture(GL_TEXTURE_2D, 0);
-                    getProgram().setLightEnabled(false);
-                    cubeModel.draw(getProgram(), TEMP_MIN, TEMP_MAX);
-                }
-            } else if (obj instanceof Object3D) {
-
-                Object3D obj3d = (Object3D) obj;
-                if (camera.contains(obj3d.getBoundingSphere(TEMP_BOUNDING_SPHERE)) != ContainmentType.Disjoint) {
-                    if (hits.contains(obj3d)) {
-                        getProgram().setAmbientColor(1f, 0f, 0f);
-                    } else if (obj3d == box) {
-                        getProgram().setAmbientColor(0f, 0f, 1f);
-                    } else if (tests.contains(obj3d)) {
-                        getProgram().setAmbientColor(1f, 1f, 0f);
-                    } else {
-                    }
-                    if (rotationEnabled) {
-                        obj3d.getRotation().mul(objRotation).normalize();
-                    }
-                    ++visibleObjects;
-                    obj3d.draw(getProgram(), camera);
-                    if (boundingSpheres) {
-                        getProgram().setLightEnabled(false);
-                        obj3d.drawBoundingSpheres(getProgram(), camera);
-                    }
-                }
-            }
-        });
-
-        space.handleVisibleObjects(camera, obj -> {
-            getProgram().reset();
-
-            if (obj instanceof Space.Node && boundingBoxes) {
-                getProgram().setMaterialAlpha(.2f);
-                getProgram().setOpaque(false);
-
-                Space.Node node = (Space.Node) obj;
-                getProgram().setAmbientColor(1f, 1f, 1f);
-                getProgram().setLightEnabled(false);
-
-                if (hyperCubeMode) {
-                    float hyperFactor = 2;
-                    TEMP_MIN.set(node.getMinX(), node.getMinY(), node.getMinZ());
-                    float shiftX = hyperFactor * (float) (Math.sin(node.getMaxX()) * Math.sin(time + node.getMaxX()));
-                    float shiftY = hyperFactor * (float) (Math.cos(node.getMaxY()) * Math.sin(time + node.getMaxY()));
-                    float shiftZ = hyperFactor * (float) (Math.cos(node.getMaxZ()) * Math.cos(time + node.getMaxZ()));
-                    TEMP_MAX.set(
-                            node.getMaxX() + shiftX,
-                            node.getMaxY() + shiftY,
-                            node.getMaxZ() + shiftZ);
-                } else {
-                    TEMP_MIN.set(node.getMinX(), node.getMinY(), node.getMinZ());
-                    TEMP_MAX.set(node.getMaxX(), node.getMaxY(), node.getMaxZ());
-                }
-                glBindTexture(GL_TEXTURE_2D, 0);
-                cubeModel.draw(getProgram(), TEMP_MIN, TEMP_MAX);
-            }
-        });
+        space.handleVisibleObjects(camera, visibleObjectHandler);
+        space.handleVisibleObjects(camera, visibleWireframeHandler);
         glUseProgram(0);
     }
 
+    private ObjectCollisionHandler collisionHandler = new ObjectCollisionHandler() {
+        @Override
+        public void onObjectCollision(BoundingSphere sphere, Object obj) {
+            Object3D o3d = (Object3D) obj;
+            if (box != o3d && sphere.intersects(o3d.getBoundingSphere(TEMP_BOUNDING_SPHERE_2))) {
+                hits.add(o3d);
+            } else {
+                tests.add(o3d);
+            }
+        }
+    };
+
+    private VisibleObjectHandler visibleObjectHandler = obj -> {
+        getProgram().reset();
+        if (obj instanceof Space.Node && boundingBoxes) {
+            Space.Node node = (Space.Node) obj;
+            if (node.containerSize() > 0 && node.contains(box)) {
+                getProgram().setAmbientColor(0f, 1f, 0f);
+                getProgram().setMaterialAlpha(1f);
+                getProgram().setOpaque(true);
+
+                TEMP_MIN.set(node.getMinX(), node.getMinY(), node.getMinZ());
+                TEMP_MAX.set(node.getMaxX(), node.getMaxY(), node.getMaxZ());
+                glBindTexture(GL_TEXTURE_2D, 0);
+                getProgram().setLightEnabled(false);
+                cubeModel.draw(getProgram(), TEMP_MIN, TEMP_MAX);
+            }
+        } else if (obj instanceof Object3D) {
+
+            Object3D obj3d = (Object3D) obj;
+            if (camera.contains(obj3d.getBoundingSphere(TEMP_BOUNDING_SPHERE)) != ContainmentType.Disjoint) {
+                if (hits.contains(obj3d)) {
+                    getProgram().setAmbientColor(1f, 0f, 0f);
+                } else if (obj3d == box) {
+                    getProgram().setAmbientColor(0f, 0f, 1f);
+                } else if (tests.contains(obj3d)) {
+                    getProgram().setAmbientColor(1f, 1f, 0f);
+                } else {
+                }
+                if (rotationEnabled) {
+                    obj3d.getRotation().mul(objRotation).normalize();
+                }
+                ++visibleObjects;
+                obj3d.draw(getProgram(), camera);
+                if (boundingSpheres) {
+                    getProgram().setLightEnabled(false);
+                    obj3d.drawBoundingSpheres(getProgram(), camera);
+                }
+            }
+        }
+    };
+
+
+    private VisibleObjectHandler visibleWireframeHandler = obj -> {
+
+
+        getProgram().reset();
+
+        if (obj instanceof Space.Node && boundingBoxes) {
+            getProgram().setMaterialAlpha(.2f);
+            getProgram().setOpaque(false);
+
+            Space.Node node = (Space.Node) obj;
+            getProgram().setAmbientColor(1f, 1f, 1f);
+            getProgram().setLightEnabled(false);
+
+            if (hyperCubeMode) {
+                float hyperFactor = 2;
+                TEMP_MIN.set(node.getMinX(), node.getMinY(), node.getMinZ());
+                float shiftX = hyperFactor * (float) (Math.sin(node.getMaxX()) * Math.sin(time + node.getMaxX()));
+                float shiftY = hyperFactor * (float) (Math.cos(node.getMaxY()) * Math.sin(time + node.getMaxY()));
+                float shiftZ = hyperFactor * (float) (Math.cos(node.getMaxZ()) * Math.cos(time + node.getMaxZ()));
+                TEMP_MAX.set(
+                        node.getMaxX() + shiftX,
+                        node.getMaxY() + shiftY,
+                        node.getMaxZ() + shiftZ);
+            } else {
+                TEMP_MIN.set(node.getMinX(), node.getMinY(), node.getMinZ());
+                TEMP_MAX.set(node.getMaxX(), node.getMaxY(), node.getMaxZ());
+            }
+            glBindTexture(GL_TEXTURE_2D, 0);
+            cubeModel.draw(getProgram(), TEMP_MIN, TEMP_MAX);
+        }
+    };
 }
