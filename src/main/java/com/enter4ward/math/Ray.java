@@ -84,12 +84,6 @@ public class Ray {
         this.position = position;
     }
 
-    /**
-     * Equals.
-     *
-     * @param other the other
-     * @return true, if successful
-     */
     public boolean equals(Object obj) {
         if (obj instanceof Ray) {
             Ray other = (Ray) obj;
@@ -105,7 +99,7 @@ public class Ray {
      * @param box the box
      * @return the float
      */
-    public Float intersects(BoundingBox box) {
+    public Float intersects(IBoundingBox box) {
         float Epsilon = 1e-6f;
 
         Float tMin = null, tMax = null;

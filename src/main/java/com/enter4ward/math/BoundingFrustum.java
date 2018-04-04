@@ -39,7 +39,7 @@ public class BoundingFrustum {
         return planes[5];
     }
 
-    public ContainmentType contains(BoundingBox box) {
+    public ContainmentType contains(IBoundingBox box) {
         Boolean intersects = false;
         for (int i = 0; i < 6; ++i) {
             PlaneIntersectionType planeIntersectionType = box.intersects(this.planes[i]);

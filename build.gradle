@@ -1,5 +1,4 @@
-
-
+import org.gradle.internal.os.OperatingSystem
 
 group 'com.enter4ward'
 version '1.0-SNAPSHOT'
@@ -13,7 +12,17 @@ repositories {
 }
 
 project.ext.lwjglVersion = "3.1.6"
-project.ext.lwjglNatives = "natives-windows"
+switch ( OperatingSystem.current() ) {
+    case OperatingSystem.WINDOWS:
+        project.ext.lwjglNatives = "natives-windows"
+        break
+    case OperatingSystem.LINUX:
+        project.ext.lwjglNatives = "natives-linux"
+        break
+    case OperatingSystem.MAC_OS:
+        project.ext.lwjglNatives = "natives-macos"
+        break
+}
 
 repositories {
     mavenCentral()
@@ -44,7 +53,6 @@ dependencies {
     compile "org.lwjgl:lwjgl-opengl:$lwjglVersion"
     compile "org.lwjgl:lwjgl-opengles:$lwjglVersion"
     compile "org.lwjgl:lwjgl-openvr:$lwjglVersion"
-    compile "org.lwjgl:lwjgl-ovr:$lwjglVersion"
     compile "org.lwjgl:lwjgl-par:$lwjglVersion"
     compile "org.lwjgl:lwjgl-remotery:$lwjglVersion"
     compile "org.lwjgl:lwjgl-rpmalloc:$lwjglVersion"
@@ -71,7 +79,14 @@ dependencies {
     compile "org.lwjgl:lwjgl-opengl:$lwjglVersion:$lwjglNatives"
     compile "org.lwjgl:lwjgl-opengles:$lwjglVersion:$lwjglNatives"
     compile "org.lwjgl:lwjgl-openvr:$lwjglVersion:$lwjglNatives"
-    compile "org.lwjgl:lwjgl-ovr:$lwjglVersion:$lwjglNatives"
+
+    switch ( OperatingSystem.current() ) {
+        case OperatingSystem.WINDOWS:
+            compile "org.lwjgl:lwjgl-ovr:$lwjglVersion:$lwjglNatives"
+            compile "org.lwjgl:lwjgl-ovr:$lwjglVersion"
+            break
+    }
+
     compile "org.lwjgl:lwjgl-par:$lwjglVersion:$lwjglNatives"
     compile "org.lwjgl:lwjgl-remotery:$lwjglVersion:$lwjglNatives"
     compile "org.lwjgl:lwjgl-rpmalloc:$lwjglVersion:$lwjglNatives"
