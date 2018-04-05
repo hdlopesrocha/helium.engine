@@ -2,6 +2,7 @@ package com.enter4ward;
 
 import com.enter4ward.lwjgl.*;
 import com.enter4ward.math.*;
+import org.joml.Intersectionf;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
@@ -15,9 +16,9 @@ import static org.lwjgl.opengl.GL20.glUseProgram;
 
 public class Main extends Game {
 
-    //private static final int NUMBER_OF_OBJECTS = 0;
+    private static final int NUMBER_OF_OBJECTS = 0;
     //private static final int NUMBER_OF_OBJECTS = 500000;
-    private static final int NUMBER_OF_OBJECTS = 1000000;
+    //private static final int NUMBER_OF_OBJECTS = 1000000;
 
     private static final BoundingSphere TEMP_BOUNDING_SPHERE = new BoundingSphere();
     private static final BoundingSphere TEMP_BOUNDING_SPHERE_2 = new BoundingSphere();
@@ -49,9 +50,33 @@ public class Main extends Game {
     private DrawableBox cubeModel;
     private LWJGLModel3D skyModel;
     private Object3D sky;
+    private Octree voxel = new Octree(0.5f);
+
 
     public Main() {
+        BoundingSphere sphere = new BoundingSphere(new Vector3f(), 16);
+        Vector3f vec = new Vector3f();
 
+        voxel.build(sphere, (x, y, z, l) -> {
+
+            boolean intersects = Intersectionf.testAabSphere(
+                    x,y,z,x+l,y+l,z+l,
+                    sphere.x,sphere.y,sphere.z,sphere.r*sphere.r);
+
+            int count =0;
+            for (int i = 0; i < 2; ++i) {
+                for (int j = 0; j < 2; ++j) {
+                    for (int k = 0; k < 2; ++k) {
+                        vec.set(x, y, z).add(i * l,j * l,k * l);
+                        if(sphere.contains(vec)){
+                            ++count;
+                        }
+                    }
+                }
+            }
+            boolean contains =  count ==8;
+            return intersects && !contains;
+        });
     }
 
     public static void main(String[] args) {
@@ -260,6 +285,22 @@ public class Main extends Game {
         // DRAW OBJECTS
         space.handleVisibleObjects(camera, visibleObjectHandler);
         space.handleVisibleObjects(camera, visibleWireframeHandler);
+        voxel.handleVisibleObjects(camera, new VisibleVoxelHandler() {
+            @Override
+            public void onObjectVisible(float x, float y, float z, float l, Object obj) {
+                 if (!voxel.canSplit(l)) {
+                    getProgram().setAmbientColor(1f, 0f, 0f);
+                    getProgram().setMaterialAlpha(1f);
+                    getProgram().setOpaque(true);
+
+                    TEMP_MIN.set(x,y,z);
+                    TEMP_MAX.set(x+l,y+l,z+l);
+                    glBindTexture(GL_TEXTURE_2D, 0);
+                    getProgram().setLightEnabled(false);
+                    cubeModel.draw(getProgram(), TEMP_MIN, TEMP_MAX);
+                 }
+            }
+        });
         glUseProgram(0);
     }
 

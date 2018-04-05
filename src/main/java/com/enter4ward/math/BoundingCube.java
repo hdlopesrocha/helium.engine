@@ -4,8 +4,7 @@ import org.joml.Vector3f;
 
 public class BoundingCube extends IBoundingBox {
 
-    private float len;
-    private float minX, minY, minZ;
+    private float len, minX, minY, minZ;
 
     public BoundingCube() {
 

@@ -39,6 +39,14 @@ public class BoundingFrustum {
         return planes[5];
     }
 
+
+    private static final BoundingCube TEMP_CUBE = new BoundingCube();
+    public ContainmentType contains(float x, float y, float z, float l) {
+        TEMP_CUBE.setMin(x,y,z);
+        TEMP_CUBE.setLen(l);
+        return contains(TEMP_CUBE);
+    }
+
     public ContainmentType contains(IBoundingBox box) {
         Boolean intersects = false;
         for (int i = 0; i < 6; ++i) {

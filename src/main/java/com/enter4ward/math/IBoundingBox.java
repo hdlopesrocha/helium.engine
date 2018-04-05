@@ -63,7 +63,6 @@ public abstract class IBoundingBox {
         final float sy = sphere.y;
         final float sz = sphere.z;
         final float sr = sphere.r;
-
         if (sx - getMinX() >= sr && sy - getMinY() >= sr
                 && sz - getMinZ() >= sr && getMaxX() - sx >= sr
                 && getMaxY() - sy >= sr && getMaxZ() - sz >= sr)
