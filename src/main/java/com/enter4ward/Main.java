@@ -57,25 +57,36 @@ public class Main extends Game {
         BoundingSphere sphere = new BoundingSphere(new Vector3f(), 16);
         Vector3f vec = new Vector3f();
 
-        voxel.build(sphere, (x, y, z, l) -> {
+        voxel.build(sphere, new Octree.MatchHandler() {
+            @Override
+            public ContainmentType isMatch(float x, float y, float z, float l) {
+                boolean intersects = Intersectionf.testAabSphere(
+                        x, y, z, x + l, y + l, z + l,
+                        sphere.x, sphere.y, sphere.z, sphere.r * sphere.r);
 
-            boolean intersects = Intersectionf.testAabSphere(
-                    x,y,z,x+l,y+l,z+l,
-                    sphere.x,sphere.y,sphere.z,sphere.r*sphere.r);
-
-            int count =0;
-            for (int i = 0; i < 2; ++i) {
-                for (int j = 0; j < 2; ++j) {
-                    for (int k = 0; k < 2; ++k) {
-                        vec.set(x, y, z).add(i * l,j * l,k * l);
-                        if(sphere.contains(vec)){
-                            ++count;
+                int count = 0;
+                for (int i = 0; i < 2; ++i) {
+                    for (int j = 0; j < 2; ++j) {
+                        for (int k = 0; k < 2; ++k) {
+                            vec.set(x, y, z).add(i * l, j * l, k * l);
+                            if (sphere.contains(vec)) {
+                                ++count;
+                            }
                         }
                     }
                 }
+                boolean contains = count == 8;
+                return intersects && !contains ? ContainmentType.Intersects : contains ? ContainmentType.Contains : ContainmentType.Disjoint;
             }
-            boolean contains =  count ==8;
-            return intersects && !contains;
+
+            @Override
+            public ContainmentType isMatch(float x, float y, float z) {
+                vec.set(x, y, z);
+                if (sphere.contains(vec)) {
+                    return ContainmentType.Contains;
+                }
+                return ContainmentType.Disjoint;
+            }
         });
     }
 
@@ -235,6 +246,16 @@ public class Main extends Game {
             this.cameraRotationVelocity += 0.0005f;
         }
 
+
+        if (getKeyboardManager().hasKeyPressed(GLFW.GLFW_KEY_9)) {
+            marchingCubesIndex = (256+ marchingCubesIndex -1) % 256;
+        }
+        if (getKeyboardManager().hasKeyPressed(GLFW.GLFW_KEY_0)) {
+            marchingCubesIndex = (256+ marchingCubesIndex +1) % 256;
+        }
+
+
+
         if (getKeyboardManager().isKeyDown(GLFW.GLFW_KEY_R)) {
             for (int i = 0; i < 256; ++i) {
                 insertRandomBox();
@@ -266,6 +287,8 @@ public class Main extends Game {
         camera.calculateProjection(getWidth(), getHeight());
     }
 
+    int marchingCubesIndex = 255;
+
     @Override
     public void draw() {
         getProgram().update(camera);
@@ -285,20 +308,18 @@ public class Main extends Game {
         // DRAW OBJECTS
         space.handleVisibleObjects(camera, visibleObjectHandler);
         space.handleVisibleObjects(camera, visibleWireframeHandler);
-        voxel.handleVisibleObjects(camera, new VisibleVoxelHandler() {
-            @Override
-            public void onObjectVisible(float x, float y, float z, float l, Object obj) {
-                 if (!voxel.canSplit(l)) {
-                    getProgram().setAmbientColor(1f, 0f, 0f);
-                    getProgram().setMaterialAlpha(1f);
-                    getProgram().setOpaque(true);
+        voxel.handleVisibleObjects(camera, (x, y, z, l, obj, index) -> {
+            if (index == marchingCubesIndex && !voxel.canSplit(l)) {
+                getProgram().setAmbientColor(1f, 0f, 0f);
 
-                    TEMP_MIN.set(x,y,z);
-                    TEMP_MAX.set(x+l,y+l,z+l);
-                    glBindTexture(GL_TEXTURE_2D, 0);
-                    getProgram().setLightEnabled(false);
-                    cubeModel.draw(getProgram(), TEMP_MIN, TEMP_MAX);
-                 }
+                getProgram().setMaterialAlpha(1f);
+                getProgram().setOpaque(true);
+
+                TEMP_MIN.set(x, y, z);
+                TEMP_MAX.set(x + l, y + l, z + l);
+                glBindTexture(GL_TEXTURE_2D, 0);
+                getProgram().setLightEnabled(false);
+                cubeModel.draw(getProgram(), TEMP_MIN, TEMP_MAX);
             }
         });
         glUseProgram(0);

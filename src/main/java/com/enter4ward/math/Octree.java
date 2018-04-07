@@ -1,17 +1,17 @@
 package com.enter4ward.math;
 
+import org.joml.Vector3f;
+
 public class Octree {
 
     public interface MatchHandler {
-        boolean isMatch(float x, float y, float z, float l);
+        ContainmentType isMatch(float x, float y, float z, float l);
+
+        ContainmentType isMatch(float x, float y, float z);
     }
 
-    private static final int NUMBER_NODES = 8;
-    private static final Integer[] OPTIMAL_ORDER = new Integer[]{
-            0, 1, 2, 3, 4, 5, 6, 7
-    };
+    private static final Vector3f TEMP_VECTOR = new Vector3f();
 
-    private static final BoundingCube TEMP_BOUNDING_BOX = new BoundingCube();
     private final float minSize;
     private Node root;
     private final BoundingCube rootBox = new BoundingCube();
@@ -26,9 +26,9 @@ public class Octree {
     public void build(final BoundingSphere sph, final MatchHandler handler) {
         rootBox.setMin(sph.x - sph.r, sph.y - sph.r, sph.z - sph.r);
         rootBox.setLen(sph.r * 2);
-        root.buildVoxel(rootBox.getMinX(), rootBox.getMinY(), rootBox.getMinZ(), rootBox.getLen(), handler);
-        return;
+        root.buildOctree(rootBox.getMinX(), rootBox.getMinY(), rootBox.getMinZ(), rootBox.getLen(), handler);
     }
+
 
     public IBoundingBox getBoundingBox() {
         return rootBox;
@@ -53,9 +53,11 @@ public class Octree {
 
     public class Node {
 
+        private int index = 0;
         private Node[] children = new Node[8];
-        private Node() {
 
+
+        private Node() {
         }
 
         private void setChild(int i, Node node) {
@@ -69,7 +71,7 @@ public class Octree {
         private void handleVisibleObjects(final BoundingFrustum frustum, float x, float y, float z, float l,
                                           final VisibleVoxelHandler handler) {
 
-            handler.onObjectVisible(x,y,z,l,this);
+            handler.onObjectVisible(x, y, z, l, this, index);
             float newL = l / 2;
             for (int mx = 0; mx < 2; ++mx) {
                 for (int my = 0; my < 2; ++my) {
@@ -78,7 +80,7 @@ public class Octree {
                         float newY = y + my * newL;
                         float newZ = z + mz * newL;
                         int index = mx * 4 + my * 2 + mz;
-                        Node node =  getChild(index);
+                        Node node = getChild(index);
                         if (node != null && frustum.contains(newX, newY, newZ, newL) != ContainmentType.Disjoint) {
                             node.handleVisibleObjects(frustum, newX, newY, newZ, newL, handler);
                         }
@@ -87,7 +89,19 @@ public class Octree {
             }
         }
 
-        private void buildVoxel(float x, float y, float z, float l, final MatchHandler handler) {
+        private void classifyNode(float x, float y, float z, float l, final MatchHandler handler) {
+            for (int i = 0; i < 8; ++i) {
+                float vX = x + ((i / 4) % 2) * l;
+                float vY = y + ((i / 2) % 2) * l;
+                float vZ = z + ((i / 1) % 2) * l;
+                boolean ans = handler.isMatch(vX, vY, vZ) == ContainmentType.Contains;
+                if (ans) {
+                    index += (1 << i);
+                }
+            }
+        }
+
+        private void buildOctree(float x, float y, float z, float l, final MatchHandler handler) {
             if (canSplit(l)) {
                 float newL = l / 2;
                 for (int mx = 0; mx < 2; ++mx) {
@@ -96,12 +110,16 @@ public class Octree {
                             float newX = x + mx * newL;
                             float newY = y + my * newL;
                             float newZ = z + mz * newL;
-                            boolean cont = handler.isMatch(newX, newY, newZ, newL);
-                            if(cont) {
+                            ContainmentType cont = handler.isMatch(newX, newY, newZ, newL);
+                            if (cont != ContainmentType.Disjoint) {
                                 Node newNode = new Node();
+                                newNode.classifyNode(newX, newY, newZ, newL, handler);
+
                                 int index = mx * 4 + my * 2 + mz;
                                 setChild(index, newNode);
-                                newNode.buildVoxel(newX, newY, newZ, newL, handler);
+                                if (cont == ContainmentType.Intersects) {
+                                    newNode.buildOctree(newX, newY, newZ, newL, handler);
+                                }
                             }
                         }
                     }
