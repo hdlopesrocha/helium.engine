@@ -90,9 +90,11 @@ public class Main extends Game {
             setNode(space.insert(getBoundingSphere(TEMP_BOUNDING_SPHERE), this));
         }};
 
-        for (int i = 0; i < NUMBER_OF_OBJECTS; ++i) {
-            insertRandomBox();
-        }
+        new Thread(() -> {
+            for (int i = 0; i < NUMBER_OF_OBJECTS; ++i) {
+                insertRandomBox();
+            }
+        }).start();
 
         camera.lookAt(
                 new Vector3f(48, 24, 48),
@@ -107,12 +109,14 @@ public class Main extends Game {
     }
 
     public void insertRandomBox() {
-        new Object3D(new Vector3f(
-                (RANDOM.nextFloat() - 0.5f) * MAP_SIZE,
-                (RANDOM.nextFloat() - 0.5f) * MAP_SIZE,
-                (RANDOM.nextFloat() - 0.5f) * MAP_SIZE), boxModel) {{
-            setNode(space.insert(getBoundingSphere(TEMP_BOUNDING_SPHERE), this));
-        }};
+        synchronized (space) {
+            new Object3D(new Vector3f(
+                    (RANDOM.nextFloat() - 0.5f) * MAP_SIZE,
+                    (RANDOM.nextFloat() - 0.5f) * MAP_SIZE,
+                    (RANDOM.nextFloat() - 0.5f) * MAP_SIZE), boxModel) {{
+                setNode(space.insert(getBoundingSphere(TEMP_BOUNDING_SPHERE), this));
+            }};
+        }
     }
 
     public void insertRandomBoxInsideSphere(BoundingSphere sphere) {
@@ -135,12 +139,15 @@ public class Main extends Game {
         getProgram().setTime(time);
 
         box.getPosition().set(DISTANCE * (float) Math.sin(SPEED * time), 0f, DISTANCE * (float) Math.cos(SPEED * time));
-        box.setNode(space.update(box.getBoundingSphere(TEMP_BOUNDING_SPHERE), box.getNode(), box));
+        synchronized (space) {
+            box.setNode(space.update(box.getBoundingSphere(TEMP_BOUNDING_SPHERE), box.getNode(), box));
+        }
         hits.clear();
         tests.clear();
         BoundingSphere boxSphere = box.getBoundingSphere(TEMP_BOUNDING_SPHERE);
-        space.handleObjectCollisions(boxSphere, collisionHandler);
-
+        synchronized (space) {
+            space.handleObjectCollisions(boxSphere, collisionHandler);
+        }
         if (getKeyboardManager().isKeyDown(GLFW.GLFW_KEY_LEFT)) {
             camera.rotate(0, 1, 0, -cameraRotationVelocity);
         }
@@ -258,8 +265,10 @@ public class Main extends Game {
         sky.draw(getProgram(), camera);
 
         // DRAW OBJECTS
-        space.handleVisibleObjects(camera, visibleObjectHandler);
-        space.handleVisibleObjects(camera, visibleWireframeHandler);
+        synchronized (space) {
+            space.handleVisibleObjects(camera, visibleObjectHandler);
+            space.handleVisibleObjects(camera, visibleWireframeHandler);
+        }
         glUseProgram(0);
     }
 
