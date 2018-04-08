@@ -24,7 +24,7 @@ public class Model3D implements IModel3D {
     private final List<Vector3f> lights = new ArrayList<>();
 
     public Model3D() {
-        sphere = new DrawableSphere(true, false);
+        sphere = new DrawableSphere(false);
     }
 
     public Model3D(String filename, float scale, IBufferBuilder builder,

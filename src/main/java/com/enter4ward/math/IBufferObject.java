@@ -2,17 +2,14 @@ package com.enter4ward.math;
 
 import org.joml.Vector3f;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.FloatBuffer;
-import java.nio.ShortBuffer;
+import java.nio.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public abstract class IBufferObject extends BoundingSphere {
 
     protected FloatBuffer vertexBuffer;
-    protected ShortBuffer indexBuffer;
+    protected IntBuffer indexBuffer;
     protected int indexCount;
     protected Material material;
 
@@ -72,10 +69,10 @@ public abstract class IBufferObject extends BoundingSphere {
         indexCount = vertexData.getIndexData().size();
         vertexBuffer.position(0);
 
-        indexBuffer = ByteBuffer.allocateDirect(vertexData.getIndexData().size() * 2)
-                .order(ByteOrder.nativeOrder()).asShortBuffer();
+        indexBuffer = ByteBuffer.allocateDirect(vertexData.getIndexData().size() * 4)
+                .order(ByteOrder.nativeOrder()).asIntBuffer();
 
-        for (short i : vertexData.getIndexData()) {
+        for (int i : vertexData.getIndexData()) {
             indexBuffer.put(i);
         }
         indexBuffer.position(0);

@@ -7,6 +7,7 @@ uniform vec3 diffuseColor;
 uniform vec3 ambientColor;
 uniform float materialShininess;
 uniform float materialAlpha;
+uniform vec3 materialColor;
 uniform float ftime;
 uniform vec3 materialSpecular;
 uniform int opaque;
@@ -23,11 +24,12 @@ void main(void) {
 	// Override out_Color with our texture pixel
 	outColor = textureLod(texture_diffuse, vTexCoord,0);
 	outColor.w*=materialAlpha;
+    outColor.xyz += materialColor;
+
 	if(opaque==1 && outColor.w<1.0)
 			discard;
 	if(opaque==0 && outColor.w==1.0)
 			discard;
-
     if(lightEnabled == 1){
     	vec3 lightDir = -normalize(vPosition-lightPosition[0]);
     	vec3 normal = normalize(vNormal);
@@ -35,7 +37,9 @@ void main(void) {
         vec3 specularLightWeighting = lightSpecularColor[0] * specularLightBrightness;
         specularLightWeighting *= materialSpecular;
 	    outColor.xyz *=  diffuseColor*max(dot(normal, lightDir), 0.0);
+/*
 	    outColor.xyz+=specularLightWeighting;
+*/
     }
 
     outColor.xyz+=ambientColor;

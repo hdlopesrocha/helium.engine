@@ -4,6 +4,7 @@ import com.enter4ward.lwjgl.*;
 import com.enter4ward.math.*;
 import org.joml.Intersectionf;
 import org.joml.Quaternionf;
+import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 
@@ -12,7 +13,6 @@ import java.util.List;
 import java.util.Random;
 
 import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL20.glUseProgram;
 
 public class Main extends Game {
 
@@ -30,7 +30,6 @@ public class Main extends Game {
     public final int MAP_SIZE = 2048;
     public final float DISTANCE = 32;
     public final float SPEED = 0.5f;
-    DrawableSphere sphere;
     LWJGLModel3D boxModel;
     Object3D box;
     final List<Object> hits = new ArrayList<>();
@@ -48,16 +47,88 @@ public class Main extends Game {
 
     private Space space;
     private DrawableBox cubeModel;
+    private DrawableSphere sphereModel;
     private LWJGLModel3D skyModel;
     private Object3D sky;
-    private Octree voxel = new Octree(0.5f);
-
+    private Octree voxel;
+    private int voxelLevelSelector = 0;
 
     public Main() {
+
+    }
+
+    List<BufferObject> voxelBuffers = new ArrayList<>();
+
+    public static void main(String[] args) {
+        new Main().start(1280, 720);
+    }
+
+    @Override
+    public void setup() {
+        camera = new Camera(getWidth(), getHeight(), 0.1f, 256);
+
+        space = new Space(16);
+        cubeModel = new DrawableBox();
+        sphereModel = new DrawableSphere(false);
+
+        boxModel = new LWJGLModel3D("box.json", 1f, bufferBuilder);
+        skyModel = new LWJGLModel3D("sphere.json", 10f, bufferBuilder);
+        sky = new Object3D(new Vector3f(1, 1, 1), skyModel);
+
+        box = new Object3D(new Vector3f(0, 0, 0), boxModel);
+        box.setNode(space.insert(box.getBoundingSphere(TEMP_BOUNDING_SPHERE), box));
+
+        new Object3D(new Vector3f(0, 0, 0), boxModel) {{
+            setNode(space.insert(getBoundingSphere(TEMP_BOUNDING_SPHERE), this));
+        }};
+        new Object3D(new Vector3f(DISTANCE, 0, 0), boxModel) {{
+            setNode(space.insert(getBoundingSphere(TEMP_BOUNDING_SPHERE), this));
+        }};
+        new Object3D(new Vector3f(-DISTANCE, 0, 0), boxModel) {{
+            setNode(space.insert(getBoundingSphere(TEMP_BOUNDING_SPHERE), this));
+        }};
+        new Object3D(new Vector3f(0, 0, DISTANCE), boxModel) {{
+            setNode(space.insert(getBoundingSphere(TEMP_BOUNDING_SPHERE), this));
+        }};
+        new Object3D(new Vector3f(0, 0, -DISTANCE), boxModel) {{
+            setNode(space.insert(getBoundingSphere(TEMP_BOUNDING_SPHERE), this));
+        }};
+
+        new Thread(() -> {
+            for (int i = 0; i < NUMBER_OF_OBJECTS; ++i) {
+                insertRandomBox();
+            }
+        }).start();
+
+
+        camera.lookAt(
+                new Vector3f(48, 24, 48),
+                new Vector3f(0, 0, 0),
+                new Vector3f(0, 1, 0)
+        );
+
+        setupVoxel();
+        getProgram().setAmbientColor(0, 0, 0);
+        getProgram().setDiffuseColor(1, 1, 1);
+        getProgram().setMaterialShininess(1000);
+        getProgram().setLightColor(0, new Vector3f(1, 1, 1));
+        getProgram().setLightPosition(0, new Vector3f(-500, 200, 1000));
+    }
+
+    public void setupVoxel() {
+        voxel = new Octree(0.1f);
+
+        float radius = 16;
+        float len = radius * 2 + 1;
+
+        BoundingCube cube = new BoundingCube();
+        cube.setMin(-len * .5f, -len * .5f, -len * .5f);
+        cube.setLen(len);
+
         BoundingSphere sphere = new BoundingSphere(new Vector3f(), 16);
         Vector3f vec = new Vector3f();
 
-        voxel.build(sphere, new Octree.MatchHandler() {
+        voxel.build(cube, new Octree.MatchHandler() {
             @Override
             public ContainmentType isMatch(float x, float y, float z, float l) {
                 boolean intersects = Intersectionf.testAabSphere(
@@ -88,67 +159,51 @@ public class Main extends Game {
                 return ContainmentType.Disjoint;
             }
         });
-    }
 
-    public static void main(String[] args) {
-        new Main().start(1280, 720);
-    }
+        List<VertexData> vertexDatas = new ArrayList<>();
+        voxel.extractTriangles((level, ix, iy, iz, jx, jy, jz, kx, ky, kz) -> {
+            VertexData vertexData;
+            while (level >= vertexDatas.size()){
+                vertexData = new VertexData();
+                vertexDatas.add(vertexData);
+            }
+            vertexData = vertexDatas.get(level);
 
-    @Override
-    public void setup() {
-        camera = new Camera(getWidth(), getHeight(), 0.1f, 256);
 
-        space = new Space(16);
-        cubeModel = new DrawableBox();
+            Vector3f normal = new Vector3f(ix - jx, iy - jy, iz - jz).cross(ix - kx, iy - ky, iz - kz);
 
-        boxModel = new LWJGLModel3D("box.json", 1f, bufferBuilder);
+            vertexData.addIndex(vertexData.getIndexData().size());
+            vertexData.addPosition(new Vector3f(ix, iy, iz));
+            vertexData.addNormal(normal);
+            vertexData.addTexture(new Vector2f(0, 0));
 
-        sphere = new DrawableSphere(true, false);
-        skyModel = new LWJGLModel3D("sphere.json", 10f, bufferBuilder);
-        sky = new Object3D(new Vector3f(1, 1, 1), skyModel);
+            vertexData.addIndex(vertexData.getIndexData().size());
+            vertexData.addPosition(new Vector3f(jx, jy, jz));
+            vertexData.addNormal(normal);
+            vertexData.addTexture(new Vector2f(0, 1));
 
-        box = new Object3D(new Vector3f(0, 0, 0), boxModel);
-        box.setNode(space.insert(box.getBoundingSphere(TEMP_BOUNDING_SPHERE), box));
-
-        new Object3D(new Vector3f(0, 0, 0), boxModel) {{
-            setNode(space.insert(getBoundingSphere(TEMP_BOUNDING_SPHERE), this));
-        }};
-        new Object3D(new Vector3f(DISTANCE, 0, 0), boxModel) {{
-            setNode(space.insert(getBoundingSphere(TEMP_BOUNDING_SPHERE), this));
-        }};
-        new Object3D(new Vector3f(-DISTANCE, 0, 0), boxModel) {{
-            setNode(space.insert(getBoundingSphere(TEMP_BOUNDING_SPHERE), this));
-        }};
-        new Object3D(new Vector3f(0, 0, DISTANCE), boxModel) {{
-            setNode(space.insert(getBoundingSphere(TEMP_BOUNDING_SPHERE), this));
-        }};
-        new Object3D(new Vector3f(0, 0, -DISTANCE), boxModel) {{
-            setNode(space.insert(getBoundingSphere(TEMP_BOUNDING_SPHERE), this));
-        }};
-
-        for (int i = 0; i < NUMBER_OF_OBJECTS; ++i) {
-            insertRandomBox();
+            vertexData.addIndex(vertexData.getIndexData().size());
+            vertexData.addPosition(new Vector3f(kx, ky, kz));
+            vertexData.addNormal(normal);
+            vertexData.addTexture(new Vector2f(1, 0));
+        });
+        for(VertexData vertexData : vertexDatas){
+            BufferObject voxelBuffer = (BufferObject) bufferBuilder.build();
+            voxelBuffer.buildBuffer(vertexData);
+            voxelBuffers.add(voxelBuffer);
+            vertexData.clear();
         }
-
-        camera.lookAt(
-                new Vector3f(48, 24, 48),
-                new Vector3f(0, 0, 0),
-                new Vector3f(0, 1, 0)
-        );
-        getProgram().setAmbientColor(0, 0, 0);
-        getProgram().setDiffuseColor(1, 1, 1);
-        getProgram().setMaterialShininess(1000);
-        getProgram().setLightColor(0, new Vector3f(1, 1, 1));
-        getProgram().setLightPosition(0, new Vector3f(-5, 2, 10));
     }
 
     public void insertRandomBox() {
-        new Object3D(new Vector3f(
-                (RANDOM.nextFloat() - 0.5f) * MAP_SIZE,
-                (RANDOM.nextFloat() - 0.5f) * MAP_SIZE,
-                (RANDOM.nextFloat() - 0.5f) * MAP_SIZE), boxModel) {{
-            setNode(space.insert(getBoundingSphere(TEMP_BOUNDING_SPHERE), this));
-        }};
+        synchronized (space) {
+            new Object3D(new Vector3f(
+                    (RANDOM.nextFloat() - 0.5f) * MAP_SIZE,
+                    (RANDOM.nextFloat() - 0.5f) * MAP_SIZE,
+                    (RANDOM.nextFloat() - 0.5f) * MAP_SIZE), boxModel) {{
+                setNode(space.insert(getBoundingSphere(TEMP_BOUNDING_SPHERE), this));
+            }};
+        }
     }
 
     public void insertRandomBoxInsideSphere(BoundingSphere sphere) {
@@ -171,12 +226,15 @@ public class Main extends Game {
         getProgram().setTime(time);
 
         box.getPosition().set(DISTANCE * (float) Math.sin(SPEED * time), 0f, DISTANCE * (float) Math.cos(SPEED * time));
-        box.setNode(space.update(box.getBoundingSphere(TEMP_BOUNDING_SPHERE), box.getNode(), box));
+        synchronized (space) {
+            box.setNode(space.update(box.getBoundingSphere(TEMP_BOUNDING_SPHERE), box.getNode(), box));
+        }
         hits.clear();
         tests.clear();
         BoundingSphere boxSphere = box.getBoundingSphere(TEMP_BOUNDING_SPHERE);
-        space.handleObjectCollisions(boxSphere, collisionHandler);
-
+        synchronized (space) {
+            space.handleObjectCollisions(boxSphere, collisionHandler);
+        }
         if (getKeyboardManager().isKeyDown(GLFW.GLFW_KEY_LEFT)) {
             camera.rotate(0, 1, 0, -cameraRotationVelocity);
         }
@@ -247,13 +305,13 @@ public class Main extends Game {
         }
 
 
-        if (getKeyboardManager().hasKeyPressed(GLFW.GLFW_KEY_9)) {
-            marchingCubesIndex = (256+ marchingCubesIndex -1) % 256;
-        }
-        if (getKeyboardManager().hasKeyPressed(GLFW.GLFW_KEY_0)) {
-            marchingCubesIndex = (256+ marchingCubesIndex +1) % 256;
+        if (getKeyboardManager().hasKeyReleased(GLFW.GLFW_KEY_9)) {
+            voxelLevelSelector = (voxelLevelSelector-1+voxelBuffers.size())%voxelBuffers.size();
         }
 
+        if (getKeyboardManager().hasKeyReleased(GLFW.GLFW_KEY_0)) {
+            voxelLevelSelector = (voxelLevelSelector+1+voxelBuffers.size())%voxelBuffers.size();
+        }
 
 
         if (getKeyboardManager().isKeyDown(GLFW.GLFW_KEY_R)) {
@@ -287,7 +345,6 @@ public class Main extends Game {
         camera.calculateProjection(getWidth(), getHeight());
     }
 
-    int marchingCubesIndex = 255;
 
     @Override
     public void draw() {
@@ -306,23 +363,15 @@ public class Main extends Game {
         sky.draw(getProgram(), camera);
 
         // DRAW OBJECTS
-        space.handleVisibleObjects(camera, visibleObjectHandler);
-        space.handleVisibleObjects(camera, visibleWireframeHandler);
-        voxel.handleVisibleObjects(camera, (x, y, z, l, obj, index) -> {
-            if (index == marchingCubesIndex && !voxel.canSplit(l)) {
-                getProgram().setAmbientColor(1f, 0f, 0f);
-
-                getProgram().setMaterialAlpha(1f);
-                getProgram().setOpaque(true);
-
-                TEMP_MIN.set(x, y, z);
-                TEMP_MAX.set(x + l, y + l, z + l);
-                glBindTexture(GL_TEXTURE_2D, 0);
-                getProgram().setLightEnabled(false);
-                cubeModel.draw(getProgram(), TEMP_MIN, TEMP_MAX);
-            }
-        });
-        glUseProgram(0);
+        synchronized (space) {
+            space.handleVisibleObjects(camera, visibleObjectHandler);
+            space.handleVisibleObjects(camera, visibleWireframeHandler);
+        }
+        getProgram().reset();
+        getProgram().setMaterialColor(1, 1, 1);
+        getProgram().setAmbientColor(.2f, .2f, .2f);
+        //   glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        voxelBuffers.get(voxelLevelSelector).draw(getProgram());
     }
 
     private ObjectCollisionHandler collisionHandler = new ObjectCollisionHandler() {
@@ -371,6 +420,9 @@ public class Main extends Game {
                 obj3d.draw(getProgram(), camera);
                 if (boundingSpheres) {
                     getProgram().setLightEnabled(false);
+                    getProgram().setAmbientColor(1f, 1f, 1f);
+                    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
                     obj3d.drawBoundingSpheres(getProgram(), camera);
                 }
             }

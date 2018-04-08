@@ -30,6 +30,7 @@ public class ShaderProgram {
     private int opaqueLocation = 0;
     private int lightEnabledLocation = 0;
     private int ambientColorLocation = 0;
+    private int materialColorLocation = 0;
     private int diffuseColorLocation = 0;
     private final int[] lightPositionLocation = new int[10];
     private final int[] lightSpecularColorLocation = new int[10];
@@ -81,6 +82,7 @@ public class ShaderProgram {
         viewProjectionMatrixLocation = glGetUniformLocationARB(program, "viewProjectionMatrix");
         modelMatrixLocation = glGetUniformLocationARB(program, "modelMatrix");
         ambientColorLocation = glGetUniformLocationARB(program, "ambientColor");
+        materialColorLocation = glGetUniformLocationARB(program, "materialColor");
         timeLocation = glGetUniformLocationARB(program, "ftime");
 
         diffuseColorLocation = glGetUniformLocationARB(program, "diffuseColor");
@@ -161,6 +163,11 @@ public class ShaderProgram {
     public void setLightPosition(int index, Vector3f lightPosition) {
         this.lightPosition[index] = lightPosition;
     }
+
+    public void setMaterialColor(float r, float g, float b) {
+        glUniform3fARB(materialColorLocation, r, g, b);
+    }
+
 
     public void setLightColor(int index, Vector3f lightColor) {
         this.lightSpecularColor[index] = lightColor;
@@ -247,11 +254,13 @@ public class ShaderProgram {
     public void reset() {
         setModelMatrix(TEMP_MODEL_MATRIX.identity());
         glEnable(GL_CULL_FACE);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         glEnable(GL_DEPTH_TEST);
         setLightEnabled(true);
         setDiffuseColor(1, 1, 1);
         setMaterialAlpha(1f);
         setAmbientColor(0, 0, 0);
+        setMaterialColor(0,0,0);
         setOpaque(true);
     }
 

@@ -10,7 +10,7 @@ public class VertexData {
     private final List<Vector3f> positionData = new ArrayList<>();
     private final List<Vector3f> normalData = new ArrayList<>();
     private final List<Vector2f> textureData = new ArrayList<>();
-    private final List<Short> indexData = new ArrayList<>();
+    private final List<Integer> indexData = new ArrayList<>();
 
     public VertexData() {
 
@@ -28,7 +28,7 @@ public class VertexData {
         textureData.add(vec);
     }
 
-    public void addIndex(short f) {
+    public void addIndex(int f) {
         indexData.add(f);
 
     }
@@ -49,7 +49,7 @@ public class VertexData {
         return textureData;
     }
 
-    public List<Short> getIndexData() {
+    public List<Integer> getIndexData() {
         return indexData;
     }
 

@@ -107,7 +107,7 @@ public class BufferObject extends IBufferObject {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboiId);
 
         // Draw the vertices
-        glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_SHORT, 0);
+        glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
 
         // Put everything back to default (deselect)
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
