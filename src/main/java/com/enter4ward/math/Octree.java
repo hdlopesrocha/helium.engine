@@ -3,12 +3,11 @@ package com.enter4ward.math;
 
 public class Octree {
 
-    private int[] MC_ORDER = {0, 1, 4, 5, 3, 2, 7, 6};
+    private static int[] MC_ORDER = {0, 1, 4, 5, 3, 2, 7, 6};
 
     public interface MatchHandler {
-        ContainmentType isMatch(float x, float y, float z, float l);
-
-        ContainmentType isMatch(float x, float y, float z);
+        boolean intersects(float x, float y, float z, float l);
+        boolean contains(float x, float y, float z);
     }
 
     private final float minSize;
@@ -19,7 +18,7 @@ public class Octree {
 
     public Octree(float minSize) {
         this.minSize = minSize;
-        root = new Node();
+        root = new Node(0);
     }
 
     public void build(final BoundingCube cube, final MatchHandler handler) {
@@ -53,13 +52,27 @@ public class Octree {
         return len > minSize;
     }
 
+    private static int classifyNode(float x, float y, float z, float l, final MatchHandler handler) {
+        int index = 0;
+        for (int i = 0; i < 8; ++i) {
+            float vX = x + ((i / 4) % 2) * l;
+            float vY = y + ((i / 2) % 2) * l;
+            float vZ = z + ((i / 1) % 2) * l;
+            if (handler.contains(vX, vY, vZ)) {
+                index += (1 << MC_ORDER[i]);
+            }
+        }
+        return index;
+    }
+
     public class Node {
 
-        private int index = 0;
+        private int type = 0;
         private Node[] children = new Node[8];
 
 
-        private Node() {
+        private Node(int type) {
+            this.type = type;
         }
 
         private void setChild(int i, Node node) {
@@ -73,7 +86,7 @@ public class Octree {
         private void handleVisibleObjects(final BoundingFrustum frustum, float x, float y, float z, float l,
                                           final VisibleVoxelHandler handler) {
 
-            handler.onObjectVisible(x, y, z, l, this, index);
+            handler.onObjectVisible(x, y, z, l, this, type);
             float newL = l / 2;
             for (int mx = 0; mx < 2; ++mx) {
                 for (int my = 0; my < 2; ++my) {
@@ -91,18 +104,6 @@ public class Octree {
             }
         }
 
-        private void classifyNode(float x, float y, float z, float l, final MatchHandler handler) {
-            for (int i = 0; i < 8; ++i) {
-                float vX = x + ((i / 4) % 2) * l;
-                float vY = y + ((i / 2) % 2) * l;
-                float vZ = z + ((i / 1) % 2) * l;
-                boolean ans = handler.isMatch(vX, vY, vZ) == ContainmentType.Contains;
-                if (ans) {
-                    index += (1 << MC_ORDER[i]);
-                }
-            }
-        }
-
         private void buildOctree(int level, float x, float y, float z, float l, final MatchHandler handler) {
             if (canSplit(l)) {
                 float newL = l / 2;
@@ -112,11 +113,12 @@ public class Octree {
                             float newX = x + mx * newL;
                             float newY = y + my * newL;
                             float newZ = z + mz * newL;
-                            ContainmentType cont = handler.isMatch(newX, newY, newZ, newL);
-                            if (cont != ContainmentType.Disjoint) {
-                                Node newNode = new Node();
-                                newNode.classifyNode(newX, newY, newZ, newL, handler);
+                            int type = classifyNode(newX, newY, newZ, newL, handler);
+                            ContainmentType cont = type==255 ? ContainmentType.Contains :
+                                    handler.intersects(newX, newY, newZ, newL) ? ContainmentType.Intersects: ContainmentType.Disjoint;
 
+                            if (cont != ContainmentType.Disjoint) {
+                                Node newNode = new Node(type);
                                 int index = mx * 4 + my * 2 + mz;
                                 setChild(index, newNode);
                                 if (cont == ContainmentType.Intersects) {
@@ -130,7 +132,7 @@ public class Octree {
         }
 
         private void buildTriangles(int level, float x, float y, float z, float l, TriangleVoxelHandler triHandler) {
-            int[] tris = MarchingCubeHelper.triTable[index];
+            int[] tris = MarchingCubeHelper.triTable[type];
             float[][] edges = MarchingCubeHelper.edgeTable;
             for (int i = 0; i < tris.length; i += 3) {
                 int a = tris[i];

@@ -26,7 +26,7 @@ public class Main extends Game {
     private static final Vector3f TEMP_MAX = new Vector3f();
     private static final Random RANDOM = new Random();
 
-    private static final IBufferBuilder bufferBuilder = () -> new BufferObject(true);
+    private static final IBufferBuilder bufferBuilder = () -> new BufferObject(false);
     public final int MAP_SIZE = 2048;
     public final float DISTANCE = 32;
     public final float SPEED = 0.5f;
@@ -115,6 +115,7 @@ public class Main extends Game {
         getProgram().setLightPosition(0, new Vector3f(-500, 200, 1000));
     }
 
+
     public void setupVoxel() {
         voxel = new Octree(0.1f);
 
@@ -130,40 +131,22 @@ public class Main extends Game {
 
         voxel.build(cube, new Octree.MatchHandler() {
             @Override
-            public ContainmentType isMatch(float x, float y, float z, float l) {
-                boolean intersects = Intersectionf.testAabSphere(
+            public boolean intersects(float x, float y, float z, float l) {
+                return Intersectionf.testAabSphere(
                         x, y, z, x + l, y + l, z + l,
                         sphere.x, sphere.y, sphere.z, sphere.r * sphere.r);
-
-                int count = 0;
-                for (int i = 0; i < 2; ++i) {
-                    for (int j = 0; j < 2; ++j) {
-                        for (int k = 0; k < 2; ++k) {
-                            vec.set(x, y, z).add(i * l, j * l, k * l);
-                            if (sphere.contains(vec)) {
-                                ++count;
-                            }
-                        }
-                    }
-                }
-                boolean contains = count == 8;
-                return intersects && !contains ? ContainmentType.Intersects : contains ? ContainmentType.Contains : ContainmentType.Disjoint;
             }
 
             @Override
-            public ContainmentType isMatch(float x, float y, float z) {
-                vec.set(x, y, z);
-                if (sphere.contains(vec)) {
-                    return ContainmentType.Contains;
-                }
-                return ContainmentType.Disjoint;
+            public boolean contains(float x, float y, float z) {
+                return sphere.contains(vec.set(x, y, z));
             }
         });
 
         List<VertexData> vertexDatas = new ArrayList<>();
         voxel.extractTriangles((level, ix, iy, iz, jx, jy, jz, kx, ky, kz) -> {
             VertexData vertexData;
-            while (level >= vertexDatas.size()){
+            while (level >= vertexDatas.size()) {
                 vertexData = new VertexData();
                 vertexDatas.add(vertexData);
             }
@@ -175,24 +158,28 @@ public class Main extends Game {
             vertexData.addIndex(vertexData.getIndexData().size());
             vertexData.addPosition(new Vector3f(ix, iy, iz));
             vertexData.addNormal(normal);
-            vertexData.addTexture(new Vector2f(0, 0));
+            vertexData.addTexture(new Vector2f());
 
             vertexData.addIndex(vertexData.getIndexData().size());
             vertexData.addPosition(new Vector3f(jx, jy, jz));
             vertexData.addNormal(normal);
-            vertexData.addTexture(new Vector2f(0, 1));
+            vertexData.addTexture(new Vector2f());
 
             vertexData.addIndex(vertexData.getIndexData().size());
             vertexData.addPosition(new Vector3f(kx, ky, kz));
             vertexData.addNormal(normal);
-            vertexData.addTexture(new Vector2f(1, 0));
+            vertexData.addTexture(new Vector2f());
         });
-        for(VertexData vertexData : vertexDatas){
+        int vd = 0;
+        for (VertexData vertexData : vertexDatas) {
+            System.out.println("Processing voxel level:" + vd++);
             BufferObject voxelBuffer = (BufferObject) bufferBuilder.build();
-            voxelBuffer.buildBuffer(vertexData);
+            voxelBuffer.buildBuffer(vertexData.compress());
             voxelBuffers.add(voxelBuffer);
             vertexData.clear();
         }
+
+        System.gc();
     }
 
     public void insertRandomBox() {
@@ -306,11 +293,11 @@ public class Main extends Game {
 
 
         if (getKeyboardManager().hasKeyReleased(GLFW.GLFW_KEY_9)) {
-            voxelLevelSelector = (voxelLevelSelector-1+voxelBuffers.size())%voxelBuffers.size();
+            voxelLevelSelector = (voxelLevelSelector - 1 + voxelBuffers.size()) % voxelBuffers.size();
         }
 
         if (getKeyboardManager().hasKeyReleased(GLFW.GLFW_KEY_0)) {
-            voxelLevelSelector = (voxelLevelSelector+1+voxelBuffers.size())%voxelBuffers.size();
+            voxelLevelSelector = (voxelLevelSelector + 1 + voxelBuffers.size()) % voxelBuffers.size();
         }
 
 
