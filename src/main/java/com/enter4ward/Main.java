@@ -143,14 +143,14 @@ public class Main extends Game {
             }
         });
 
-        List<VertexData> vertexDatas = new ArrayList<>();
+        List<VertexData> vertexDataList = new ArrayList<>();
         voxel.extractTriangles((level, ix, iy, iz, jx, jy, jz, kx, ky, kz) -> {
             VertexData vertexData;
-            while (level >= vertexDatas.size()) {
+            while (level >= vertexDataList.size()) {
                 vertexData = new VertexData();
-                vertexDatas.add(vertexData);
+                vertexDataList.add(vertexData);
             }
-            vertexData = vertexDatas.get(level);
+            vertexData = vertexDataList.get(level);
 
 
             Vector3f normal = new Vector3f(ix - jx, iy - jy, iz - jz).cross(ix - kx, iy - ky, iz - kz);
@@ -171,7 +171,7 @@ public class Main extends Game {
             vertexData.addTexture(new Vector2f());
         });
         int vd = 0;
-        for (VertexData vertexData : vertexDatas) {
+        for (VertexData vertexData : vertexDataList) {
             System.out.println("Processing voxel level:" + vd++);
             BufferObject voxelBuffer = (BufferObject) bufferBuilder.build();
             voxelBuffer.buildBuffer(vertexData.compress());
