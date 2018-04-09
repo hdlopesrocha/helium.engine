@@ -5,6 +5,7 @@ public class Octree {
 
     private static int[] MC_ORDER = {0, 1, 4, 5, 3, 2, 7, 6};
 
+
     public interface MatchHandler {
         boolean intersects(float x, float y, float z, float l);
         boolean contains(float x, float y, float z);
@@ -18,14 +19,20 @@ public class Octree {
 
     public Octree(float minSize) {
         this.minSize = minSize;
+        rootBox.setMin(-minSize*.5f,-minSize*.5f,-minSize*.5f);
+        rootBox.setLen(minSize);
         root = new Node(0);
     }
 
-    public void build(final BoundingCube cube, final MatchHandler handler) {
-        rootBox.setMin(cube.getMinX(), cube.getMinY(), cube.getMinZ());
-        rootBox.setLen(cube.getLen());
+    public void add(final BoundingCube cube, final MatchHandler handler) {
+        root = expand(cube, handler);
         root.buildOctree(0, rootBox.getMinX(), rootBox.getMinY(), rootBox.getMinZ(), rootBox.getLen(), handler);
     }
+
+    public void remove(final BoundingCube cube, final MatchHandler matchHandler) {
+
+    }
+
 
     public void extractTriangles(final TriangleVoxelHandler triHandler) {
         root.extractTriangles(0, rootBox.getMinX(), rootBox.getMinY(), rootBox.getMinZ(), rootBox.getLen(), triHandler);
@@ -63,6 +70,52 @@ public class Octree {
             }
         }
         return index;
+    }
+
+    private int clamp(int val, int min, int max) {
+        return val < min ? min : val > max ? max : val;
+    }
+
+    private int getNodeIndex(float tx, float ty, float tz, float x, float y, float z, float l) {
+        int px = Math.round((tx - x) / l);
+        int py = Math.round((ty - y) / l);
+        int pz = Math.round((tz - z) / l);
+        px = clamp(px, 0, 1);
+        py = clamp(py, 0, 1);
+        pz = clamp(pz, 0, 1);
+        return px * 4 + py * 2 + pz;
+    }
+
+    private Octree.Node expand(final BoundingCube obj, final MatchHandler handler) {
+        Octree.Node node = root;
+        float x = rootBox.getMinX();
+        float y = rootBox.getMinY();
+        float z = rootBox.getMinZ();
+        float l = rootBox.getLen();
+
+        while (true) {
+            node.type = classifyNode(x, y, z, l, handler);
+            ContainmentType cont = node.type == 0 ? ContainmentType.Contains :
+                    handler.intersects(x, y, z, l) ? ContainmentType.Intersects: ContainmentType.Disjoint;
+
+            if(cont != ContainmentType.Contains ){
+                int i = 7 - getNodeIndex(obj.getCenterX(), obj.getCenterY(), obj.getCenterZ(), x, y, z, l);
+                x = x - ((i / 4) % 2) * l;
+                y = y - ((i / 2) % 2) * l;
+                z = z - ((i / 1) % 2) * l;
+                l = l*2;
+
+                Node newNode = new Node(0);
+                newNode.setChild(i, node);
+                node = newNode;
+            }
+            else {
+                break;
+            }
+        }
+        rootBox.setMin(x,y,z);
+        rootBox.setLen(l);
+        return node;
     }
 
     public class Node {
@@ -175,5 +228,7 @@ public class Octree {
             }
 
         }
+
+
     }
 }

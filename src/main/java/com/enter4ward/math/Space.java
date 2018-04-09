@@ -235,6 +235,16 @@ public class Space {
             return createNode().set(this, sx, sy, sz, len, index);
         }
 
+        private Node expand(final BoundingSphere obj) {
+            Node node = this;
+            node.clearChildren();
+            while (!node.containsSphere(obj)) {
+                node = node.expandAux(obj);
+                node.clearChildren();
+            }
+            return node;
+        }
+
         private boolean canSplit() {
             return getLen() > minSize;
         }
@@ -251,13 +261,11 @@ public class Space {
                 }
             }
 
-            int intersections = 0;
             int childrenCount = getChildrenCount();
             for (int i = 0; i < childrenCount; ++i) {
                 Node node = getChild(i);
                 if (node != null
-                        && (intersections == 2 || frustum.contains(node) != ContainmentType.Disjoint)) {
-                    ++intersections;
+                        && (frustum.contains(node) != ContainmentType.Disjoint)) {
                     node.handleVisibleObjects(frustum, handler);
                 }
             }
@@ -297,16 +305,6 @@ public class Space {
                 } else {
                     node = node.parent;
                 }
-            }
-            return node;
-        }
-
-        private Node expand(final BoundingSphere obj) {
-            Node node = this;
-            node.clearChildren();
-            while (!node.containsSphere(obj)) {
-                node = node.expandAux(obj);
-                node.clearChildren();
             }
             return node;
         }

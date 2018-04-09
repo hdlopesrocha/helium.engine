@@ -16,9 +16,9 @@ import static org.lwjgl.opengl.GL11.*;
 
 public class Main extends Game {
 
-    private static final int NUMBER_OF_OBJECTS = 0;
+    //private static final int NUMBER_OF_OBJECTS = 0;
     //private static final int NUMBER_OF_OBJECTS = 500000;
-    //private static final int NUMBER_OF_OBJECTS = 1000000;
+    private static final int NUMBER_OF_OBJECTS = 1000000;
 
     private static final BoundingSphere TEMP_BOUNDING_SPHERE = new BoundingSphere();
     private static final BoundingSphere TEMP_BOUNDING_SPHERE_2 = new BoundingSphere();
@@ -117,7 +117,7 @@ public class Main extends Game {
 
 
     public void setupVoxel() {
-        voxel = new Octree(0.1f);
+        voxel = new Octree(0.2f);
 
         float radius = 16;
         float len = radius * 2 + 1;
@@ -129,7 +129,21 @@ public class Main extends Game {
         BoundingSphere sphere = new BoundingSphere(new Vector3f(), 16);
         Vector3f vec = new Vector3f();
 
-        voxel.build(cube, new Octree.MatchHandler() {
+        voxel.add(cube, new Octree.MatchHandler() {
+            @Override
+            public boolean intersects(float x, float y, float z, float l) {
+                return Intersectionf.testAabSphere(
+                        x, y, z, x + l, y + l, z + l,
+                        sphere.x, sphere.y, sphere.z, sphere.r * sphere.r);
+            }
+
+            @Override
+            public boolean contains(float x, float y, float z) {
+                return sphere.contains(vec.set(x, y, z));
+            }
+        });
+
+        voxel.remove(cube, new Octree.MatchHandler() {
             @Override
             public boolean intersects(float x, float y, float z, float l) {
                 return Intersectionf.testAabSphere(
