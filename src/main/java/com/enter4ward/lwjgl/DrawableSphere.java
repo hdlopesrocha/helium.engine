@@ -48,6 +48,7 @@ public class DrawableSphere {
             shader.setMaterialAlpha(0.5f);
             shader.setOpaque(false);
             glDisable(GL_CULL_FACE);
+            glLineWidth(3);
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         }
         TEMP_MATRIX.translation(sph).scale(sph.r);

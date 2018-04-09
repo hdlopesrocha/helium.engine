@@ -15,9 +15,9 @@ import static org.lwjgl.opengl.GL20.glUseProgram;
 
 public class Main extends Game {
 
-    //private static final int NUMBER_OF_OBJECTS = 0;
+    private static final int NUMBER_OF_OBJECTS = 0;
     //private static final int NUMBER_OF_OBJECTS = 500000;
-    private static final int NUMBER_OF_OBJECTS = 1000000;
+    //private static final int NUMBER_OF_OBJECTS = 1000000;
 
     private static final BoundingSphere TEMP_BOUNDING_SPHERE = new BoundingSphere();
     private static final BoundingSphere TEMP_BOUNDING_SPHERE_2 = new BoundingSphere();

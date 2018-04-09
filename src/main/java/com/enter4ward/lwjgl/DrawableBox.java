@@ -49,6 +49,7 @@ public class DrawableBox {
         TEMP_SCALE.set(max).sub(min);
         TEMP_MATRIX.translation(min).scale(TEMP_SCALE);
         shader.setModelMatrix(TEMP_MATRIX);
+        glLineWidth(3);
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         buffer.draw(shader);
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
