@@ -117,4 +117,7 @@ public class BufferObject extends IBufferObject {
         glBindVertexArray(0);
     }
 
+    public boolean canDraw() {
+        return indexCount > 0;
+    }
 }

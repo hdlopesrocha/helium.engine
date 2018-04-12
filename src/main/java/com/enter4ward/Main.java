@@ -16,9 +16,9 @@ import static org.lwjgl.opengl.GL11.*;
 
 public class Main extends Game {
 
-    //private static final int NUMBER_OF_OBJECTS = 0;
+    private static final int NUMBER_OF_OBJECTS = 0;
     //private static final int NUMBER_OF_OBJECTS = 500000;
-    private static final int NUMBER_OF_OBJECTS = 1000000;
+    //private static final int NUMBER_OF_OBJECTS = 1000000;
 
     private static final BoundingSphere TEMP_BOUNDING_SPHERE = new BoundingSphere();
     private static final BoundingSphere TEMP_BOUNDING_SPHERE_2 = new BoundingSphere();
@@ -47,7 +47,6 @@ public class Main extends Game {
 
     private Space space;
     private DrawableBox cubeModel;
-    private DrawableSphere sphereModel;
     private LWJGLModel3D skyModel;
     private Object3D sky;
     private Octree voxel;
@@ -69,7 +68,6 @@ public class Main extends Game {
 
         space = new Space(16);
         cubeModel = new DrawableBox();
-        sphereModel = new DrawableSphere(false);
 
         boxModel = new LWJGLModel3D("box.json", 1f, bufferBuilder);
         skyModel = new LWJGLModel3D("sphere.json", 10f, bufferBuilder);
@@ -115,45 +113,66 @@ public class Main extends Game {
         getProgram().setLightPosition(0, new Vector3f(-500, 200, 1000));
     }
 
+    private static Vector3f TEMP_VECTOR = new Vector3f();
+    private static BoundingCube TEMP_BOX = new BoundingCube();
+
+    public ContainmentType intersects(float x, float y, float z, float l, BoundingSphere sphere) {
+        int count = 0;
+        for (int i = 0; i < 2; ++i) {
+            for (int j = 0; j < 2; ++j) {
+                for (int k = 0; k < 2; ++k) {
+                    TEMP_VECTOR.set(x, y, z).add(i * l, j * l, k * l);
+                    if (sphere.contains(TEMP_VECTOR)) {
+                        ++count;
+                    }
+                }
+            }
+        }
+        boolean contains = count == 8;
+        if (contains) {
+            return ContainmentType.Contains;
+        }
+        boolean intersects = Intersectionf.testAabSphere(
+                x, y, z, x + l, y + l, z + l,
+                sphere.x, sphere.y, sphere.z, sphere.r * sphere.r);
+
+        return intersects ? ContainmentType.Intersects : ContainmentType.Disjoint;
+    }
+
+    private ContainmentType contains(float x, float y, float z, float l, BoundingSphere sphere) {
+        TEMP_BOX.setMin(x, y, z);
+        TEMP_BOX.setLen(l);
+        return TEMP_BOX.contains(sphere);
+    }
 
     public void setupVoxel() {
-        voxel = new Octree(0.2f);
-
-        float radius = 16;
-        float len = radius * 2 + 1;
-
-        BoundingCube cube = new BoundingCube();
-        cube.setMin(-len * .5f, -len * .5f, -len * .5f);
-        cube.setLen(len);
+        voxel = new Octree(1f);
 
         BoundingSphere sphere = new BoundingSphere(new Vector3f(), 16);
-        Vector3f vec = new Vector3f();
+        BoundingSphere sphere2 = new BoundingSphere(new Vector3f(16, 0, 0), 8);
 
-        voxel.add(cube, new Octree.MatchHandler() {
+
+        voxel.add(sphere, new Octree.MatchHandler() {
             @Override
-            public boolean intersects(float x, float y, float z, float l) {
-                return Intersectionf.testAabSphere(
-                        x, y, z, x + l, y + l, z + l,
-                        sphere.x, sphere.y, sphere.z, sphere.r * sphere.r);
+            public ContainmentType objectContains(float x, float y, float z, float l) {
+                return Main.this.intersects(x, y, z, l, sphere);
             }
 
             @Override
-            public boolean contains(float x, float y, float z) {
-                return sphere.contains(vec.set(x, y, z));
+            public ContainmentType nodeContains(float x, float y, float z, float l) {
+                return Main.this.contains(x, y, z, l, sphere);
             }
         });
 
-        voxel.remove(cube, new Octree.MatchHandler() {
+        voxel.remove(sphere2, new Octree.MatchHandler() {
             @Override
-            public boolean intersects(float x, float y, float z, float l) {
-                return Intersectionf.testAabSphere(
-                        x, y, z, x + l, y + l, z + l,
-                        sphere.x, sphere.y, sphere.z, sphere.r * sphere.r);
+            public ContainmentType objectContains(float x, float y, float z, float l) {
+                return Main.this.intersects(x, y, z, l, sphere2);
             }
 
             @Override
-            public boolean contains(float x, float y, float z) {
-                return sphere.contains(vec.set(x, y, z));
+            public ContainmentType nodeContains(float x, float y, float z, float l) {
+                return Main.this.contains(x, y, z, l, sphere2);
             }
         });
 
@@ -370,9 +389,41 @@ public class Main extends Game {
         }
         getProgram().reset();
         getProgram().setMaterialColor(1, 1, 1);
-        getProgram().setAmbientColor(.2f, .2f, .2f);
-        //   glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        voxelBuffers.get(voxelLevelSelector).draw(getProgram());
+     /*   getProgram().setMaterialColor(1, 0, 0);
+        getProgram().setAmbientColor(1f, 0f, 0f);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        glDisable(GL_CULL_FACE);
+        */
+        BufferObject voxelo = voxelBuffers.get(voxelLevelSelector);
+        if (voxelo.canDraw()) {
+            voxelo.draw(getProgram());
+        }
+
+
+        getProgram().reset();
+
+        getProgram().setLightEnabled(false);
+
+
+        voxel.handleVisibleObjects(camera, (x, y, z, l, lvl, obj) -> {
+
+            Octree.Node node = (Octree.Node) obj;
+            if (lvl == 7) {
+                if (node.getObjectContains() == ContainmentType.Contains) {
+                    getProgram().setMaterialColor(0, 1, 0);
+                } else  if (node.getObjectContains() == ContainmentType.Intersects) {
+                    getProgram().setMaterialColor(0, 0, 1);
+                } else {
+                    getProgram().setMaterialColor(1, 0, 0);
+                }
+                TEMP_MIN.set(x, y, z);
+                TEMP_MAX.set(x + l, y + l, z + l);
+                cubeModel.draw(getProgram(), TEMP_MIN, TEMP_MAX);
+            }
+
+        });
+
+
     }
 
     private ObjectCollisionHandler collisionHandler = new ObjectCollisionHandler() {
@@ -432,8 +483,6 @@ public class Main extends Game {
 
 
     private VisibleObjectHandler visibleWireframeHandler = obj -> {
-
-
         getProgram().reset();
 
         if (obj instanceof Space.Node && boundingBoxes) {

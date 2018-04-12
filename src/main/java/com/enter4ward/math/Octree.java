@@ -7,8 +7,9 @@ public class Octree {
 
 
     public interface MatchHandler {
-        boolean intersects(float x, float y, float z, float l);
-        boolean contains(float x, float y, float z);
+        ContainmentType objectContains(float x, float y, float z, float l);
+
+        ContainmentType nodeContains(float x, float y, float z, float l);
     }
 
     private final float minSize;
@@ -19,23 +20,73 @@ public class Octree {
 
     public Octree(float minSize) {
         this.minSize = minSize;
-        rootBox.setMin(-minSize*.5f,-minSize*.5f,-minSize*.5f);
+        rootBox.setMin(-minSize * .5f, -minSize * .5f, -minSize * .5f);
         rootBox.setLen(minSize);
-        root = new Node(0);
+        root = new Node();
     }
 
-    public void add(final BoundingCube cube, final MatchHandler handler) {
+    public void add(final BoundingSphere cube, final MatchHandler handler) {
         root = expand(cube, handler);
-        root.buildOctree(0, rootBox.getMinX(), rootBox.getMinY(), rootBox.getMinZ(), rootBox.getLen(), handler);
+        root.addVolume(0, rootBox.getMinX(), rootBox.getMinY(), rootBox.getMinZ(), rootBox.getLen(), handler);
     }
 
-    public void remove(final BoundingCube cube, final MatchHandler matchHandler) {
+    public void remove(final BoundingSphere cube, final MatchHandler handler) {
+        root = expand(cube, handler);
+        root.removeVolume(0, rootBox.getMinX(), rootBox.getMinY(), rootBox.getMinZ(), rootBox.getLen(), handler);
+    }
+
+    private void buildTriangles(int level, int type, float x, float y, float z, float l, TriangleVoxelHandler triHandler) {
+        int[] tris = MarchingCubeHelper.triTable[type];
+        float[][] edges = MarchingCubeHelper.edgeTable;
+        for (int i = 0; i < tris.length; i += 3) {
+            int a = tris[i];
+            int b = tris[i + 2];
+            int c = tris[i + 1];
+
+            float ax = x + edges[a][0] * l;
+            float ay = y + edges[a][1] * l;
+            float az = z + edges[a][2] * l;
+
+            float bx = x + edges[b][0] * l;
+            float by = y + edges[b][1] * l;
+            float bz = z + edges[b][2] * l;
+
+            float cx = x + edges[c][0] * l;
+            float cy = y + edges[c][1] * l;
+            float cz = z + edges[c][2] * l;
+
+            triHandler.onTriangle(level, ax, ay, az, bx, by, bz, cx, cy, cz);
+
+        }
+    }
+
+    public void extractTrianglesAux(int level, float x, float y, float z, float l, TriangleVoxelHandler triHandler) {
+
+        int type = 0;
+        for (int i = 0; i < 8; ++i) {
+            float newX = x + (0.5f + ((i >> 2) % 2)) * l;
+            float newY = y + (0.5f + ((i >> 1) % 2)) * l;
+            float newZ = z + (0.5f + ((i >> 0) % 2)) * l;
+            if (getValueAtLevel(newX, newY, newZ, level) != ContainmentType.Disjoint) {
+                type += (1 << MC_ORDER[i]);
+            }
+        }
+        buildTriangles(level, type, x, y, z, l, triHandler);
+        if (canSplit(l) && type != 0) {
+            float newL = l / 2;
+            for (int i = 0; i < 8; ++i) {
+                float newX = x + ((i >> 2) % 2) * newL;
+                float newY = y + ((i >> 1) % 2) * newL;
+                float newZ = z + ((i >> 0) % 2) * newL;
+                extractTrianglesAux(level + 1, newX, newY, newZ, newL, triHandler);
+            }
+        }
 
     }
 
 
     public void extractTriangles(final TriangleVoxelHandler triHandler) {
-        root.extractTriangles(0, rootBox.getMinX(), rootBox.getMinY(), rootBox.getMinZ(), rootBox.getLen(), triHandler);
+        extractTrianglesAux(0, rootBox.getMinX(), rootBox.getMinY(), rootBox.getMinZ(), rootBox.getLen(), triHandler);
     }
 
     public IBoundingBox getBoundingBox() {
@@ -51,7 +102,7 @@ public class Octree {
     public void handleVisibleObjects(BoundingFrustum frustum,
                                      VisibleVoxelHandler handler) {
         if (root != null) {
-            root.handleVisibleObjects(frustum, rootBox.getMinX(), rootBox.getMinY(), rootBox.getMinZ(), rootBox.getLen(), handler);
+            root.handleVisibleObjects(frustum, rootBox.getMinX(), rootBox.getMinY(), rootBox.getMinZ(), rootBox.getLen(), 0, handler);
         }
     }
 
@@ -59,34 +110,25 @@ public class Octree {
         return len > minSize;
     }
 
-    private static int classifyNode(float x, float y, float z, float l, final MatchHandler handler) {
-        int index = 0;
-        for (int i = 0; i < 8; ++i) {
-            float vX = x + ((i / 4) % 2) * l;
-            float vY = y + ((i / 2) % 2) * l;
-            float vZ = z + ((i / 1) % 2) * l;
-            if (handler.contains(vX, vY, vZ)) {
-                index += (1 << MC_ORDER[i]);
-            }
-        }
-        return index;
-    }
 
     private int clamp(int val, int min, int max) {
         return val < min ? min : val > max ? max : val;
     }
 
     private int getNodeIndex(float tx, float ty, float tz, float x, float y, float z, float l) {
-        int px = Math.round((tx - x) / l);
-        int py = Math.round((ty - y) / l);
-        int pz = Math.round((tz - z) / l);
-        px = clamp(px, 0, 1);
-        py = clamp(py, 0, 1);
-        pz = clamp(pz, 0, 1);
+        int px = clamp(Math.round((tx - x) / l), 0, 1);
+        int py = clamp(Math.round((ty - y) / l), 0, 1);
+        int pz = clamp(Math.round((tz - z) / l), 0, 1);
+
         return px * 4 + py * 2 + pz;
     }
 
-    private Octree.Node expand(final BoundingCube obj, final MatchHandler handler) {
+    private ContainmentType getValueAtLevel(float px, float py, float pz, int level) {
+        return root.getValueAtLevelAux(px, py, pz, rootBox.getMinX(), rootBox.getMinY(), rootBox.getMinZ(), rootBox.getLen(), level);
+    }
+
+
+    private Octree.Node expand(final BoundingSphere obj, final MatchHandler handler) {
         Octree.Node node = root;
         float x = rootBox.getMinX();
         float y = rootBox.getMinY();
@@ -94,38 +136,40 @@ public class Octree {
         float l = rootBox.getLen();
 
         while (true) {
-            node.type = classifyNode(x, y, z, l, handler);
-            ContainmentType cont = node.type == 0 ? ContainmentType.Contains :
-                    handler.intersects(x, y, z, l) ? ContainmentType.Intersects: ContainmentType.Disjoint;
-
-            if(cont != ContainmentType.Contains ){
-                int i = 7 - getNodeIndex(obj.getCenterX(), obj.getCenterY(), obj.getCenterZ(), x, y, z, l);
-                x = x - ((i / 4) % 2) * l;
-                y = y - ((i / 2) % 2) * l;
-                z = z - ((i / 1) % 2) * l;
-                l = l*2;
-
-                Node newNode = new Node(0);
-                newNode.setChild(i, node);
-                node = newNode;
-            }
-            else {
+            ContainmentType cont = handler.nodeContains(x, y, z, l);
+            if (cont == ContainmentType.Contains) {
                 break;
             }
+
+            int i = 7 - getNodeIndex(obj.x, obj.y, obj.z, x, y, z, l);
+            x = x - ((i >> 2) % 2) * l;
+            y = y - ((i >> 1) % 2) * l;
+            z = z - ((i >> 0) % 2) * l;
+            l = l * 2;
+
+            Node newNode = new Node();
+            newNode.setChild(i, node);
+            node = newNode;
+
         }
-        rootBox.setMin(x,y,z);
+        rootBox.setMin(x, y, z);
         rootBox.setLen(l);
         return node;
     }
 
+    private boolean contains(float px, float py, float pz, float x, float y, float z, float l) {
+        return x <= px && px <= x + l && y <= py && py <= y + l && z <= pz && pz <= z + l;
+    }
+
     public class Node {
 
-        private int type = 0;
+        private ContainmentType nodeContains;
+        private ContainmentType objectContains;
         private Node[] children = new Node[8];
 
 
-        private Node(int type) {
-            this.type = type;
+        private Node() {
+            this.nodeContains = ContainmentType.Disjoint;
         }
 
         private void setChild(int i, Node node) {
@@ -136,10 +180,10 @@ public class Octree {
             return this.children == null ? null : this.children[i];
         }
 
-        private void handleVisibleObjects(final BoundingFrustum frustum, float x, float y, float z, float l,
+        private void handleVisibleObjects(final BoundingFrustum frustum, float x, float y, float z, float l, int lvl,
                                           final VisibleVoxelHandler handler) {
 
-            handler.onObjectVisible(x, y, z, l, this, type);
+            handler.onObjectVisible(x, y, z, l, lvl, this);
             float newL = l / 2;
             for (int mx = 0; mx < 2; ++mx) {
                 for (int my = 0; my < 2; ++my) {
@@ -150,15 +194,34 @@ public class Octree {
                         int index = mx * 4 + my * 2 + mz;
                         Node node = getChild(index);
                         if (node != null && frustum.contains(newX, newY, newZ, newL) != ContainmentType.Disjoint) {
-                            node.handleVisibleObjects(frustum, newX, newY, newZ, newL, handler);
+                            node.handleVisibleObjects(frustum, newX, newY, newZ, newL, lvl + 1, handler);
                         }
                     }
                 }
             }
         }
 
-        private void buildOctree(int level, float x, float y, float z, float l, final MatchHandler handler) {
-            if (canSplit(l)) {
+        private void clearChildren(){
+            children = new Node[8];
+        }
+
+        private void addVolume(int level, float x, float y, float z, float l, final MatchHandler handler) {
+            // the new object is not going to add anything new
+            if (objectContains == ContainmentType.Contains) {
+                return;
+            }
+            ContainmentType oc = handler.objectContains(x, y, z, l);
+            ContainmentType nc = handler.nodeContains(x, y, z, l);
+            nodeContains = nodeContains == ContainmentType.Intersects ? nodeContains : nc;
+            objectContains = oc;
+
+            // the new object contains previous ones
+            if(oc == ContainmentType.Contains){
+                clearChildren();
+                return;
+            }
+
+            if (nc != ContainmentType.Disjoint && canSplit(l)) {
                 float newL = l / 2;
                 for (int mx = 0; mx < 2; ++mx) {
                     for (int my = 0; my < 2; ++my) {
@@ -166,69 +229,83 @@ public class Octree {
                             float newX = x + mx * newL;
                             float newY = y + my * newL;
                             float newZ = z + mz * newL;
-                            int type = classifyNode(newX, newY, newZ, newL, handler);
-                            ContainmentType cont = type==255 ? ContainmentType.Contains :
-                                    handler.intersects(newX, newY, newZ, newL) ? ContainmentType.Intersects: ContainmentType.Disjoint;
-
-                            if (cont != ContainmentType.Disjoint) {
-                                Node newNode = new Node(type);
-                                int index = mx * 4 + my * 2 + mz;
-                                setChild(index, newNode);
-                                if (cont == ContainmentType.Intersects) {
-                                    newNode.buildOctree(level + 1, newX, newY, newZ, newL, handler);
-                                }
+                            int index = mx * 4 + my * 2 + mz;
+                            Node node = getChild(index);
+                            if (node == null) {
+                                node = new Node();
+                                setChild(index, node);
                             }
+                            node.addVolume(level + 1, newX, newY, newZ, newL, handler);
                         }
                     }
                 }
             }
         }
 
-        private void buildTriangles(int level, float x, float y, float z, float l, TriangleVoxelHandler triHandler) {
-            int[] tris = MarchingCubeHelper.triTable[type];
-            float[][] edges = MarchingCubeHelper.edgeTable;
-            for (int i = 0; i < tris.length; i += 3) {
-                int a = tris[i];
-                int b = tris[i + 2];
-                int c = tris[i + 1];
 
-                float ax = x + edges[a][0] * l;
-                float ay = y + edges[a][1] * l;
-                float az = z + edges[a][2] * l;
-
-                float bx = x + edges[b][0] * l;
-                float by = y + edges[b][1] * l;
-                float bz = z + edges[b][2] * l;
-
-                float cx = x + edges[c][0] * l;
-                float cy = y + edges[c][1] * l;
-                float cz = z + edges[c][2] * l;
-
-                triHandler.onTriangle(level, ax, ay, az, bx, by, bz, cx, cy, cz);
-
+        private void removeVolume(int level, float x, float y, float z, float l, final MatchHandler handler) {
+            // the new object is not going to add anything new
+            if (objectContains == ContainmentType.Contains) {
+                return;
             }
-        }
+            ContainmentType oc = handler.objectContains(x, y, z, l);
+            ContainmentType nc = handler.nodeContains(x, y, z, l);
+            nodeContains = nodeContains == ContainmentType.Intersects ? nodeContains : nc;
+            objectContains = oc;
 
-        public void extractTriangles(int level, float x, float y, float z, float l, TriangleVoxelHandler triHandler) {
-            buildTriangles(level, x, y, z, l, triHandler);
-            float newL = l / 2;
-            for (int mx = 0; mx < 2; ++mx) {
-                for (int my = 0; my < 2; ++my) {
-                    for (int mz = 0; mz < 2; ++mz) {
-                        float newX = x + mx * newL;
-                        float newY = y + my * newL;
-                        float newZ = z + mz * newL;
-                        int index = mx * 4 + my * 2 + mz;
-                        Node child = getChild(index);
-                        if (child != null) {
-                            child.extractTriangles(level + 1, newX, newY, newZ, newL, triHandler);
+            // the new object contains previous ones
+            if(oc == ContainmentType.Contains){
+                clearChildren();
+                return;
+            }
+
+            if (nc != ContainmentType.Disjoint && canSplit(l)) {
+                float newL = l / 2;
+                for (int mx = 0; mx < 2; ++mx) {
+                    for (int my = 0; my < 2; ++my) {
+                        for (int mz = 0; mz < 2; ++mz) {
+                            float newX = x + mx * newL;
+                            float newY = y + my * newL;
+                            float newZ = z + mz * newL;
+                            int index = mx * 4 + my * 2 + mz;
+                            Node node = getChild(index);
+
+                            if (node == null) {
+                                node = new Node();
+                                setChild(index, node);
+                            }
+                            node.removeVolume(level + 1, newX, newY, newZ, newL, handler);
                         }
                     }
                 }
             }
+        }           // an object is already containing this node
 
+
+        private ContainmentType getValueAtLevelAux(float px, float py, float pz, float x, float y, float z, float l, int level) {
+            if (!contains(px, py, pz, x, y, z, l)) {
+                return ContainmentType.Disjoint;
+            }
+            if (level > 0) {
+                int i = getNodeIndex(px, py, pz, x, y, z, l);
+                Node node = getChild(i);
+                if (node != null) {
+                    l = l * 0.5f;
+                    x = x + ((i >> 2) % 2) * l;
+                    y = y + ((i >> 1) % 2) * l;
+                    z = z + ((i >> 0) % 2) * l;
+                    return node.getValueAtLevelAux(px, py, pz, x, y, z, l, level - 1);
+                }
+            }
+            return nodeContains;
         }
 
+        public ContainmentType getNodeContains() {
+            return nodeContains;
+        }
 
+        public ContainmentType getObjectContains() {
+            return objectContains;
+        }
     }
 }
